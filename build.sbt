@@ -80,12 +80,12 @@ lazy val lagomModules = Seq[Project](
 lazy val `copy-of-lagom-persistence-test` = (project in file("lagom-persistence-couchbase/copy-of-lagom-persistence-test"))
 //  .settings(common)
   .settings(
-    //TODO: how to turn off building an artifact for this module
+    //TODO: how to turn off publishing an artifact for this module
     libraryDependencies := Dependencies.`copy-of-lagom-persistence-test`
   )
 
 lazy val `lagom-persistence-couchbase-core` = (project in file("lagom-persistence-couchbase/core"))
-  .dependsOn(core % "compile;test->test")
+  .dependsOn(core % "compile;test->test", couchbaseClient)
   .settings(common)
   .enablePlugins(AutomateHeaderPlugin)
   .settings(
@@ -95,7 +95,6 @@ lazy val `lagom-persistence-couchbase-core` = (project in file("lagom-persistenc
 
 lazy val `lagom-persistence-couchbase-javadsl` = (project in file("lagom-persistence-couchbase/javadsl"))
   .dependsOn(
-    core % "compile;test->test",
     `lagom-persistence-couchbase-core` % "compile;test->test",
     `copy-of-lagom-persistence-test` % "compile;test->test"
   )
@@ -108,7 +107,6 @@ lazy val `lagom-persistence-couchbase-javadsl` = (project in file("lagom-persist
 
 lazy val `lagom-persistence-couchbase-scaladsl` = (project in file("lagom-persistence-couchbase/scaladsl"))
   .dependsOn(
-    core % "compile;test->test",
     `lagom-persistence-couchbase-core` % "compile;test->test",
     `copy-of-lagom-persistence-test` % "compile;test->test"
   )

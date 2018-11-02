@@ -5,4 +5,5 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2") // sources autofor
 addSbtPlugin("com.lightbend" % "sbt-whitesource" % "0.1.13")
 
 // pull in scala versions from the travis config and more
-addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
+//TODO: commented it out because it causes the issue: Unresolved dependency `copy-of-lagom-persistence-test`
+//addSbtPlugin("com.dwijnand" % "sbt-travisci" % "1.1.3")
