@@ -47,8 +47,7 @@ jobs:
         - CMD=lagom-persistence-couchbase-scaladsl/test
 
     - stage: whitesource
-      env: CMD=";whitesourceCheckPolicies ;whitesourceUpdate"
-      jdk: oraclejdk8
+      script: sbt 'set credentials += Credentials("whitesource", "whitesourcesoftware.com", "", System.getenv("WHITESOURCE_KEY"))' whitesourceCheckPolicies whitesourceUpdate
 
 stages:
   # runs on master commits and PRs
