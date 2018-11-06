@@ -19,6 +19,9 @@ script:
 
 jobs:
   include:
+    - stage: whitesource
+      script: sbt 'set credentials += Credentials("whitesource", "whitesourcesoftware.com", "", System.getenv("WHITESOURCE_KEY"))' whitesourceCheckPolicies whitesourceUpdate
+
     - stage: check
       script: sbt headerCheck || { echo "[error] Missing license headers found. Please run 'headerCreate' and commit the updated code."; false; }
       name: "Copyright header check"
@@ -46,17 +49,14 @@ jobs:
         - PRE_CMD="docker-compose up -d couchbase"
         - CMD=lagom-persistence-couchbase-scaladsl/test
 
-    - stage: whitesource
-      script: sbt 'set credentials += Credentials("whitesource", "whitesourcesoftware.com", "", System.getenv("WHITESOURCE_KEY"))' whitesourceCheckPolicies whitesourceUpdate
-
 stages:
   # runs on master commits and PRs
   - name: check
     if: NOT tag =~ ^v
 
   # runs on main repo master commits and version-tagged commits
-  - name: whitesource
-    if: repo = akka/akka-persistence-couchbase AND ( ( branch = master AND type = push ) OR tag =~ ^v )
+#  - name: whitesource
+#    if: repo = akka/akka-persistence-couchbase AND ( ( branch = master AND type = push ) OR tag =~ ^v )
 
 after_failure:
   - docker-compose logs
