@@ -5,7 +5,7 @@ The snapshot plugin enables storing and loading snapshots for persistent actor i
 
 
 ## Configuration 
-For setting up the project to use the plugin, and preparing the couchbase bucket, see [Getting Started](getting-started.md),
+For setting up the project to use the plugin, and preparing the couchbase bucket, see @ref:[Getting Started](getting-started.md),
 especially note the required index.
 
 The snapshot plugin can then be enabled with the following configuration
@@ -14,7 +14,7 @@ The snapshot plugin can then be enabled with the following configuration
 akka.persistence.snapshot-store.plugin = "couchbase-journal.snapshot"
 ```
 
-The connection settings are shared with the journal plugin, see [Journal Plugin](journal.md) for details.
+The connection settings are shared with the journal plugin, see @ref:[Journal Plugin](journal.md) for details.
 
 See [reference.conf](https://github.com/akka/akka-persistence-couchbase/blob/master/core/src/main/resources/reference.conf) 
 for complete configuration option docs and defaults.

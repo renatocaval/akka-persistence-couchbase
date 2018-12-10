@@ -23,7 +23,7 @@ Lagom has three internal components that require connection and bucket configura
 
 * The **journal** stores serialized events
 * The **snapshot store** stores snapshots of the state as an optimization for faster recovery 
-* The **offset store** is used for [Read-Side support](lagom-read-side.md) to keep track of the most recent 
+* The **offset store** is used for @ref:[Read-Side support](lagom-read-side.md) to keep track of the most recent 
 event handled by each read-side processor.
 
 While different services should be isolated by using different buckets, it is perfectly fine to use the same bucket 
@@ -83,7 +83,7 @@ lagom.persistence.read-side.couchbase {
 
 
 
-Lagom's Couchbase support is provided by the [`akka-persistence-couchbase`](index.md) plugin. 
+Lagom's Couchbase support is provided by the @ref:[`akka-persistence-couchbase`](index.md) plugin. 
 A full configuration reference can be in the plugin's [`reference.conf`](https://github.com/akka/akka-persistence-couchbase/blob/master/core/src/main/resources/reference.conf).
 
 ## Couchbase Location
@@ -93,6 +93,6 @@ The application should be configured to connect to the existing Couchbase cluste
 ## Caveats
 
  * Lagom will **NOT** start Couchbase service automatically. 
-    * The Couchbase Docker container can be used for development. For more details see [Developing the plugin](developing.md)
+    * The Couchbase Docker container can be used for development. For more details see @ref:[Developing the plugin](developing.md)
  * Couchbase connection can ONLY be configured statically. Dynamically locatable Couchbase server is not supported at the moment. 
    [Tracked by issue #135](https://github.com/akka/akka-persistence-couchbase/issues/135)

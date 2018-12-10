@@ -3,8 +3,6 @@
 Please feel free to contribute to the Akka Persistence Couchbase plugin by reporting issues you identify, 
 or by suggesting changes to the code. Please refer to our [contributing instructions](https://github.com/akka/akka-persistence-couchbase/blob/master/CONTRIBUTING.md) to learn how it can be done.
 
-## 
-
 ## Running Dockerized Couchbase for tests
 
 Build and start a single node Couchbase cluster in docker:

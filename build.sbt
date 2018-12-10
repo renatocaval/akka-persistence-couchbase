@@ -171,18 +171,17 @@ lazy val docs = project
   .enablePlugins(AkkaParadoxPlugin)
   .settings(common)
   .settings(
-    name := "Alpakka Kafka",
+    name := "Akka Persistence Couchbase",
     skip in publish := true,
     whitesourceIgnore := true,
     paradoxGroups := Map("Language" -> Seq("Java", "Scala")),
     paradoxProperties ++= Map(
-      "project.url" -> "https://doc.akka.io/docs/akka-stream-kafka/current/",
+      "project.url" -> "https://doc.akka.io/docs/akka-persistence-couchbase/current/",
       "akka.version" -> Dependencies.AkkaVersion,
       "extref.akka-docs.base_url" -> s"https://doc.akka.io/docs/akka/${Dependencies.AkkaVersion}/%s",
       "extref.java-docs.base_url" -> "https://docs.oracle.com/en/java/javase/11/%s",
       "scaladoc.scala.base_url" -> s"https://www.scala-lang.org/api/current/",
       "scaladoc.akka.base_url" -> s"https://doc.akka.io/api/akka/${Dependencies.AkkaVersion}",
-      "scaladoc.akka.kafka.base_url" -> s"https://doc.akka.io/api/akka-stream-kafka/${version.value}/",
       "scaladoc.com.typesafe.config.base_url" -> s"https://lightbend.github.io/config/latest/api/"
     ),
     resolvers += Resolver.jcenterRepo

@@ -10,7 +10,7 @@
 
 ## Configuration
 
-For setting up the project to use the plugin, and preparing the couchbase bucket, see [Getting Started](getting-started.md)
+For setting up the project to use the plugin, and preparing the couchbase bucket, see @ref:[Getting Started](getting-started.md)
 
 Enable one or more of the plugins in `application.conf` and configure the cluster connection details:
 

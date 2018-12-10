@@ -10,7 +10,7 @@ The query plugin provides all the Akka Persistence Query [Read Journal plugin AP
 
 ## Configuration
 
-For setting up the project to use the plugin, and preparing the couchbase bucket, see [Getting Started](getting-started.md)
+For setting up the project to use the plugin, and preparing the couchbase bucket, see @ref:[Getting Started](getting-started.md)
 and especially the tag-related queries if you intend to use the tagging queries.
 
 Accessing the (default) read journal can be done through an extension
@@ -21,7 +21,7 @@ Scala
 Java
 :  @@snip(/core/src/test/java/akka/persistence/couchbase/javadsl/CouchbaseReadJournalTest.java) { #read-journal-access }
 
-The connection settings are shared with the journal plugin, see [Journal](journal.md). 
+The connection settings are shared with the journal plugin, see @ref:[Journal](journal.md). 
  
 See [reference.conf](https://github.com/akka/akka-persistence-couchbase/blob/master/core/src/main/resources/reference.conf) 
 for complete configuration option docs and defaults.
