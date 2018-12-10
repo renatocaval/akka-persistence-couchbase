@@ -30,3 +30,8 @@ See [reference.conf](https://github.com/akka/akka-persistence-couchbase/blob/mas
 for complete configuration option docs and defaults. 
 
 
+## Caveats
+
+ * Deletion does not actually remove elements from the database, just mark them deleted with metadata since events by tag
+   is expected to return deleted events. To actually reclaim storage space additional event deletion has to be
+   done. 

@@ -69,4 +69,3 @@ Offsets can be created from unix timestamps using `akka.persistence.couchbase.UU
      hasn't reached consistency at that time
  * As the indexes used to perform the queries are eventually consistent (even for a single writer node) there 
    is no guarantee that an immediate query will see the latest writes.
- 
