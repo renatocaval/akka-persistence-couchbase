@@ -25,7 +25,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.compat.java8.FutureConverters._
 import scala.compat.java8.OptionConverters._
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.duration._
 
 class CouchbaseSessionSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterAll with Eventually {
@@ -175,7 +175,11 @@ class CouchbaseSessionSpec extends WordSpec with Matchers with ScalaFutures with
   override protected def afterAll(): Unit = {
     session.close().toScala.futureValue
     cluster.clusterManager().removeBucket(bucketName)
-    cluster.disconnect()
+    try {
+      cluster.disconnect()
+    } catch {
+      case r: RuntimeException if r.getCause.isInstanceOf[TimeoutException] => // we don't really care here
+    }
     TestKit.shutdownActorSystem(system)
   }
 }
