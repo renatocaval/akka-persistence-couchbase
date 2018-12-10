@@ -20,7 +20,7 @@ The `CouchbaseSession` is injected in the constructor. `CouchbaseSession` provid
 flavors for executing queries. The one used in the above example returns a document. There are also methods for streaming 
 a result set, which can be useful when the result set is big.
 
-All methods in `CouchbaseSession` are non-blocking and they return a `CompletionStage` or a `Source`.
+All methods in `CouchbaseSession` are non-blocking and they return a @scala[Future]@java[CompletionStage] or a `Source`.
 
 ## Update the Read-Side
 
