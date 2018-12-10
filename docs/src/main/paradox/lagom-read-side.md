@@ -54,11 +54,11 @@ Java
 
 ### Building the read-side handler
 
-The other method on the `ReadSideProcessor` is `buildHandler`. This is responsible for creating the [ReadSideHandler] 
+The other method on the `ReadSideProcessor` is `buildHandler`. This is responsible for creating the `ReadSideHandler` 
 that will handle events. It also gives the opportunity to run two callbacks, one is a global prepare callback, 
 the other is a regular prepare callback.
 
-[CouchbaseReadSide] has a `builder` method for creating a builder for these handlers, this builder will create a handler 
+`CouchbaseReadSide` has a `builder` method for creating a builder for these handlers, this builder will create a handler 
 that will automatically handle readside offsets for you. It can be created like so:
 
 Scala
@@ -186,5 +186,5 @@ that is managed by [Akka Cluster Sharding](https://doc.akka.io/docs/akka/2.5/clu
 The processor consumes a stream of persistent events delivered by the `eventsByTag` 
 [Persistence Query](https://doc.akka.io/docs/akka/2.5/persistence-query.html?language=java) implemented by 
 [akka-persistence-couchbase](https://github.com/akka/akka-persistence-couchbase). The tag corresponds to the `tag` 
-defined by the `AggregateEventTag`.
+defined by the `AggregateEventTag` and the number of tags will determine how many read-side processors will be running across all nodes of your cluster. 
 
