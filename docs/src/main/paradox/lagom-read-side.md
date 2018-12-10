@@ -186,7 +186,7 @@ that is managed by [Akka Cluster Sharding](https://doc.akka.io/docs/akka/2.5/clu
 The processor consumes a stream of persistent events delivered by the `eventsByTag` 
 [Persistence Query](https://doc.akka.io/docs/akka/2.5/persistence-query.html?language=java) implemented by 
 [akka-persistence-couchbase](https://github.com/akka/akka-persistence-couchbase). The tag corresponds to the `tag` 
-defined by the `AggregateEventTag` 
+defined by the `AggregateEventTag`. 
 
 In case of sharded tags, the number of sharded tags will determine how many read-side processors will be running across all nodes of your cluster. 
 
