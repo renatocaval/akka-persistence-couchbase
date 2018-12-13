@@ -104,11 +104,11 @@ class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, configPath:
   }
   if (settings.warnAboutMissingIndexes) {
     implicit val materializer = ActorMaterializer()
-    for {
+    val checkF = for {
       session <- asyncSession
       indexes <- session.listIndexes().runWith(Sink.seq)
-    } {
-      materializer.shutdown() // not needed after used
+    } yield {
+
       val indexNames = indexes.map(_.name()).toSet
       Set("tags", "tags-ordering").foreach(
         requiredIndex =>
@@ -118,6 +118,9 @@ class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, configPath:
               requiredIndex
           )
       )
+    }
+    checkF.onComplete {
+      case _ => materializer.shutdown()
     }
   }
 
