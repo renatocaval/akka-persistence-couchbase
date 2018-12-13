@@ -10,12 +10,12 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.event.Logging.{Debug, LogEvent, StdOutLogger}
 import org.scalatest.{Outcome, SuiteMixin, TestSuite}
-/*
- * Copyright (C) 2018 Lightbend Inc. <http://www.lightbend.com>
+
+// Copy of the same, internal test tool, in Akka testkit tests
+
+/**
+ * Capture all log events and print them only for failing tests
  */
-
-// FIXME Copy of the same in yet unreleased Akka 2.5.19, remove when that is available
-
 trait WithLogCapturing extends SuiteMixin { this: TestSuite ⇒
   implicit def system: ActorSystem
 
