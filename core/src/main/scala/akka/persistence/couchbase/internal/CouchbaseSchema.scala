@@ -4,22 +4,22 @@
 
 package akka.persistence.couchbase.internal
 
-import java.util.Base64
+import java.util.{Base64, UUID}
 
 import akka.actor.{ActorSystem, ExtendedActorSystem}
 import akka.annotation.InternalApi
 import akka.dispatch.ExecutionContexts
-import akka.persistence.{PersistentRepr, SnapshotMetadata}
-import akka.persistence.couchbase.CouchbaseJournal.TaggedPersistentRepr
 import akka.persistence.couchbase._
+import akka.persistence.{PersistentRepr, SnapshotMetadata}
 import akka.serialization.{AsyncSerializer, Serialization, Serializers}
 import akka.stream.alpakka.couchbase.scaladsl.CouchbaseSession
 import akka.util.OptionVal
 import com.couchbase.client.java.document.JsonDocument
-import com.couchbase.client.java.document.json.JsonObject
-import com.couchbase.client.java.query.{N1qlParams, N1qlQuery, ParameterizedN1qlQuery, SimpleN1qlQuery}
+import com.couchbase.client.java.document.json.{JsonArray, JsonObject}
+import com.couchbase.client.java.query.{N1qlParams, N1qlQuery}
 
 import scala.collection.JavaConverters._
+import scala.collection.{immutable => im}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -30,6 +30,18 @@ import scala.util.control.NonFatal
  */
 @InternalApi
 private[akka] final object CouchbaseSchema {
+
+  sealed class MessageForWrite(val sequenceNr: Long, val msg: SerializedMessage)
+  final class TaggedMessageForWrite(sequenceNr: Long,
+                                    msg: SerializedMessage,
+                                    val ordering: UUID,
+                                    val tagsWithSeqNrs: im.Seq[(String, Long)])
+      extends MessageForWrite(sequenceNr, msg)
+
+  final case class TaggedPersistentRepr(pr: PersistentRepr,
+                                        tags: Set[String],
+                                        tagSequenceNumbers: Map[String, Long],
+                                        offset: UUID)
 
   object Fields {
     val Type = "type"
@@ -50,16 +62,19 @@ private[akka] final object CouchbaseSchema {
              // either of these two depending on serializer
              "payload_bin": "rO0ABXQACHAyLWV2dC0x",
              "payload": { json- }
-             // these two fielsds are only present if there are any tags
+             // these three fields are only present if there are any tags
              "tags": [ "tag1", "tag2" ]
+             "tag-seq-nrs": {
+               "tag1": 5,
+               "tag2": 1
+             },
              // the format of the data is the time based UUID represented as (time in utc)
              // [YYYY]-[MM]-[DD]T[HH]:[mm]:[ss]:[nanoOfSecond]_[lsb-unsigned-long-as-space-padded-string]
              // see akka.persistence.couchbase.internal.TimeBasedUUIDSerialization
              // which makes it possible to sort as a string field and get the same order as sorting the actual time based UUIDs
              "ordering": "1582-10-16T18:52:02.434002368_ 7093823767347982046",
            }
-         ],
-
+         ]
        }
      */
 
@@ -67,6 +82,10 @@ private[akka] final object CouchbaseSchema {
     val PersistenceId = "persistence_id"
     val WriterUuid = "writer_uuid"
     val Messages = "messages"
+    val TagSeqNrs = "tag_seq_nrs"
+    // per tag
+    val Tag = "tag"
+    val TagSeqNr = "seq_nr"
 
     // === per message/event ===
     val SequenceNr = "sequence_nr"
@@ -83,7 +102,7 @@ private[akka] final object CouchbaseSchema {
        Sample doc structure:
        {
          "type": "journal_metadata",
-         "deleted_to": 123
+         "deleted_to": 123, // if there are deleted events
        }
 
      */
@@ -235,6 +254,24 @@ private[akka] final object CouchbaseSchema {
             throw new RuntimeException(s"Failed looking up deleted messages for [$persistenceId]", ex)
         }
 
+    private lazy val highestTagSeqNr =
+      s"""
+        |SELECT t.seq_nr from ${bucketName} a UNNEST messages AS m UNNEST m.tag_seq_nrs AS t
+        |WHERE a.type = "journal_message"
+        |AND a.persistence_id = $$pid
+        |AND t.tag = $$tag
+        |ORDER BY m.sequence_nr DESC
+        |LIMIT 1
+      """.stripMargin
+
+    def highestTagSequenceNumberQuery(persistenceId: String, tag: String, params: N1qlParams): N1qlQuery =
+      N1qlQuery.parameterized(highestTagSeqNr,
+                              JsonObject
+                                .create()
+                                .put("pid", persistenceId)
+                                .put("tag", tag),
+                              params)
+
   }
 
   def snapshotIdFor(metadata: SnapshotMetadata): String = s"${metadata.persistenceId}-${metadata.sequenceNr}-snapshot"
@@ -250,7 +287,8 @@ private[akka] final object CouchbaseSchema {
         .put(Fields.DeletedTo, deletedTo)
     )
 
-  def serializedMessageToObject(msg: SerializedMessage): JsonObject = {
+  // the basic form, shared by snapshots and events
+  private def serializedMessageAsJson(msg: SerializedMessage): JsonObject = {
     val json = JsonObject
       .create()
       .put(Fields.SerializerManifest, msg.manifest)
@@ -263,8 +301,59 @@ private[akka] final object CouchbaseSchema {
       case OptionVal.Some(jsonPayload) =>
         json.put(Fields.JsonPayload, jsonPayload)
     }
-
     json
+  }
+
+  def snapshotAsJsonDoc(msg: SerializedMessage, metadata: SnapshotMetadata): JsonDocument = {
+    val json = serializedMessageAsJson(msg)
+      .put(Fields.Type, CouchbaseSchema.SnapshotEntryType)
+      .put(Fields.Timestamp, metadata.timestamp)
+      .put(Fields.SequenceNr, metadata.sequenceNr)
+      .put(Fields.PersistenceId, metadata.persistenceId)
+    JsonDocument.create(CouchbaseSchema.snapshotIdFor(metadata), json)
+  }
+
+  def serializedMessageAsJson(messageForWrite: MessageForWrite): JsonObject = {
+    val json = serializedMessageAsJson(messageForWrite.msg)
+      .put(Fields.SequenceNr, messageForWrite.sequenceNr)
+
+    messageForWrite match {
+      case tagged: TaggedMessageForWrite =>
+        json
+          .put(Fields.SequenceNr, tagged.sequenceNr)
+          .put(Fields.Ordering, TimeBasedUUIDSerialization.toSortableString(tagged.ordering))
+          // for the index an array with the tags straight up
+          .put(Fields.Tags, JsonArray.from(tagged.tagsWithSeqNrs.map { case (tag, _) => tag }.asJava))
+          // for the gap detection, tag and sequence number per tag
+          .put(
+            Fields.TagSeqNrs,
+            JsonArray.from(
+              tagged.tagsWithSeqNrs.map {
+                case (tag, tagSeqNr) =>
+                  JsonObject
+                    .create()
+                    .put(Fields.Tag, tag)
+                    .put(Fields.TagSeqNr, tagSeqNr)
+              }.asJava
+            )
+          )
+      case untagged => json
+    }
+  }
+
+  def atomicWriteAsJsonDoc(pid: String,
+                           writerUuid: Any,
+                           messages: im.Seq[MessageForWrite],
+                           lowestSequenceNr: Long): JsonDocument = {
+    val insert: JsonObject = JsonObject
+      .create()
+      .put(Fields.Type, CouchbaseSchema.JournalEntryType)
+      .put(Fields.PersistenceId, pid)
+      // assumed all msgs have the same writerUuid
+      .put(Fields.WriterUuid, writerUuid)
+      .put(Fields.Messages, JsonArray.from(messages.map(serializedMessageAsJson).asJava))
+
+    JsonDocument.create(s"$pid-$lowestSequenceNr", insert)
   }
 
   def deserializeEvent[T](
@@ -293,13 +382,21 @@ private[akka] final object CouchbaseSchema {
     val writerUuid = value.getString(Fields.WriterUuid)
     val sequenceNr = value.getLong(Fields.SequenceNr)
     val tags: Set[String] = value.getArray(Fields.Tags).asScala.map(_.toString).toSet
+    val tagSequenceNumbers = value
+      .getArray(Fields.TagSeqNrs)
+      .asScala
+      .map {
+        case obj: JsonObject => obj.getString(Fields.Tag) -> (obj.getLong(Fields.TagSeqNr): Long)
+      }
+      .toMap
     SerializedMessage.fromJsonObject(serialization, value).map { payload =>
-      CouchbaseJournal.TaggedPersistentRepr(
+      TaggedPersistentRepr(
         PersistentRepr(payload = payload,
                        sequenceNr = sequenceNr,
                        persistenceId = persistenceId,
                        writerUuid = writerUuid),
         tags,
+        tagSequenceNumbers,
         TimeBasedUUIDSerialization.fromSortableString(value.getString(Fields.Ordering))
       )
     }
