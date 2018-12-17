@@ -6,7 +6,7 @@ addSbtPlugin("com.lightbend" % "sbt-whitesource" % "0.1.13")
 
 // for releasing
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "3.0.0")
-addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.2")
+addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.4")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 
