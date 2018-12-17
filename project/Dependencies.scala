@@ -32,24 +32,24 @@ object Dependencies {
     val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.25"
   }
 
-  object Test {
-    val akkaPersistenceTck = "com.typesafe.akka" %% "akka-persistence-tck" % AkkaVersion % "test"
-    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % "test"
-    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % "test"
-    val akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion % "test"
+  object TestDeps {
+    val akkaPersistenceTck = "com.typesafe.akka" %% "akka-persistence-tck" % AkkaVersion % Test
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % AkkaVersion % Test
+    val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test
+    val akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % AkkaVersion % Test
 
-    val logback = "ch.qos.logback" % "logback-classic" % "1.2.3" % "test" // EPL 1.0 / LGPL 2.1
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % "test" // ApacheV2
-    val junit = "junit" % "junit" % "4.12" % "test"
-    val junitInterface = "com.novocode" % "junit-interface" % "0.11" % "test"
+    val logback = "ch.qos.logback" % "logback-classic" % "1.2.3" % Test // EPL 1.0 / LGPL 2.1
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test // ApacheV2
+    val junit = "junit" % "junit" % "4.12" % Test
+    val junitInterface = "com.novocode" % "junit-interface" % "0.11" % Test
 
-    val lagomTestKitScalaDsl = "com.lightbend.lagom" %% "lagom-scaladsl-testkit" % LagomVersion % "test"
-    val lagomTestKitJavaDsl = "com.lightbend.lagom" %% "lagom-javadsl-testkit" % LagomVersion % "test"
-    val lagomPersistenceTestKit = "com.lightbend.lagom" %% "lagom-persistence-testkit" % LagomVersion % "test"
+    val lagomTestKitScalaDsl = "com.lightbend.lagom" %% "lagom-scaladsl-testkit" % LagomVersion % Test
+    val lagomTestKitJavaDsl = "com.lightbend.lagom" %% "lagom-javadsl-testkit" % LagomVersion % Test
+    val lagomPersistenceTestKit = "com.lightbend.lagom" %% "lagom-persistence-testkit" % LagomVersion % Test
   }
 
   import Compile._
-  import Test._
+  import TestDeps._
 
   val core = Seq(
     akkaActor,
