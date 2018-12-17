@@ -5,10 +5,6 @@ sudo: required
 services:
   - docker
 
-scala:
-  - "2.12.7"
-  - "2.11.12"
-
 jdk:
   - oraclejdk8
 
@@ -32,7 +28,7 @@ jobs:
     - env: CMD="+Test/compile"
 
     - stage: test
-    - env:
+      env:
         - PRE_CMD="docker-compose -f docker/couchbase-1-node/docker-compose.yml up -d couchbase"
         - CMD=couchbaseClient/test
     - env:
