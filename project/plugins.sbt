@@ -15,4 +15,9 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 
 // docs
 addSbtPlugin("com.lightbend.paradox" % "sbt-paradox" % "0.4.2")
+addSbtPlugin("com.lightbend.paradox" % "sbt-paradox-dependencies" % "0.1")
+addSbtPlugin("com.lightbend.paradox" % "sbt-paradox-project-info" % "0.2")
 addSbtPlugin("com.lightbend.akka" % "sbt-paradox-akka" % "0.14")
+
+// patched version of sbt-dependency-graph for sbt-paradox-dependencies
+resolvers += Resolver.bintrayIvyRepo("2m", "sbt-plugins")

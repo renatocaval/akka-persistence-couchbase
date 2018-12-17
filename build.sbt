@@ -4,7 +4,7 @@ import com.typesafe.sbt.SbtMultiJvm
 def common: Seq[Setting[_]] = Seq(
   organization := "com.lightbend.akka",
   organizationName := "Lightbend Inc.",
-  homepage := Some(url("https://github.com/akka/akka-persistence-couchbase")),
+  homepage := Some(url("https://doc.akka.io/docs/akka-persistence-couchbase/current/")),
   scmInfo := Some(
     ScmInfo(url("https://github.com/akka/akka-persistence-couchbase"),
             "https://github.com/akka/akka-persistence-couchbase.git")
