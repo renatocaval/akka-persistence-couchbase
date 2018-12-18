@@ -20,6 +20,7 @@ import org.junit.Test;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -72,7 +73,13 @@ public class CouchbaseSessionTest {
     if (bucket != null) bucket.close();
     if (couchbaseCluster != null) {
       couchbaseCluster.clusterManager().removeBucket(bucketName);
-      couchbaseCluster.disconnect();
+      try {
+        couchbaseCluster.disconnect();
+      } catch (RuntimeException ex) {
+        // fails every now and then, but we are not testing the couchbase client here, so swallow
+        if (ex.getCause() instanceof TimeoutException) System.out.println("Swallowing disconnect timeout");
+        else throw ex;
+      }
     }
   }
 
