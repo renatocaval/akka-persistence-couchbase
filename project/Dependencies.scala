@@ -11,7 +11,6 @@ object Dependencies {
 
   object Compile {
     val couchbaseClient = "com.couchbase.client" % "java-client" % "2.7.0" // Apache V2
-    val couchbaseDcpClient = "com.couchbase.client" % "dcp-client" % "0.19.0" // Apache V2
 
     // used to easily convert rxjava into reactive streams and then into akka streams
     val rxJavaReactiveStreams = "io.reactivex" % "rxjava-reactive-streams" % "1.2.1" // Apache V2
@@ -68,7 +67,6 @@ object Dependencies {
     akkaStream,
     akkaStreamTestkit,
     Compile.couchbaseClient,
-    couchbaseDcpClient,
     rxJavaReactiveStreams,
     scalaTest,
     junit,
