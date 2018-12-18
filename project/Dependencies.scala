@@ -7,7 +7,7 @@ import sbt._
 object Dependencies {
 
   val AkkaVersion = "2.5.19"
-  val LagomVersion = "1.5.0-RC1"
+  val LagomVersion = "1.5.0-M3"
 
   object Compile {
     val couchbaseClient = "com.couchbase.client" % "java-client" % "2.7.0" // Apache V2
