@@ -81,6 +81,7 @@ lazy val root = (project in file("."))
 // TODO this should eventually be an alpakka module
 lazy val couchbaseClient = (project in file("couchbase-client"))
   .settings(common)
+  .settings(AutomaticModuleName.settings("akka.stream.alpakka.couchbase"))
   .settings(
     name := "akka-persistence-couchbase-client",
     libraryDependencies := Dependencies.couchbaseClient
@@ -88,6 +89,7 @@ lazy val couchbaseClient = (project in file("couchbase-client"))
 
 lazy val core = (project in file("core"))
   .enablePlugins(AutomateHeaderPlugin)
+  .settings(AutomaticModuleName.settings("akka.persistence.couchbase"))
   .settings(common)
   .settings(
     name := "akka-persistence-couchbase",
@@ -128,6 +130,7 @@ lazy val `copy-of-lagom-persistence-test` =
 lazy val `lagom-persistence-couchbase-core` = (project in file("lagom-persistence-couchbase/core"))
   .dependsOn(core % "compile;test->test", couchbaseClient)
   .settings(common)
+  .settings(AutomaticModuleName.settings("lagom.persistence.couchbase.core"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(
     name := "lagom-persistence-couchbase-core",
@@ -136,6 +139,7 @@ lazy val `lagom-persistence-couchbase-core` = (project in file("lagom-persistenc
 
 lazy val `lagom-persistence-couchbase-javadsl` = (project in file("lagom-persistence-couchbase/javadsl"))
   .settings(common)
+  .settings(AutomaticModuleName.settings("lagom.persistence.couchbase.javadsl"))
   .dependsOn(
     core % "compile;test->test",
     `lagom-persistence-couchbase-core` % "compile;test->test",
@@ -157,6 +161,7 @@ lazy val `lagom-persistence-couchbase-scaladsl` = (project in file("lagom-persis
     `copy-of-lagom-persistence-test` % "test->test"
   )
   .settings(common)
+  .settings(AutomaticModuleName.settings("lagom.persistence.couchbase.scaladsl"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(
     name := "lagom-scaladsl-persistence-couchbase",
