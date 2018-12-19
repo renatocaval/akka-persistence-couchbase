@@ -45,38 +45,9 @@ private[akka] final object CouchbaseSchema {
 
   object Fields {
     val Type = "type"
+    // for journal, metadata and snapshot document structure samples, see docs
 
     // journal fields
-    /*
-       Sample doc structure:
-       {
-         "persistence_id": "p2",
-         "type": "journal_message",
-         "writer_uuid": "d61a4212-518a-4f75-8f27-2150f56ae60f",
-         // one or more events, more than one in the case of an atomic batched write
-         "messages": [
-           {
-             "sequence_nr": 1,
-             "ser_id": 1,
-             "ser_manifest": "",
-             // either of these two depending on serializer
-             "payload_bin": "rO0ABXQACHAyLWV2dC0x",
-             "payload": { json- }
-             // these three fields are only present if there are any tags
-             "tags": [ "tag1", "tag2" ]
-             "tag-seq-nrs": {
-               "tag1": 5,
-               "tag2": 1
-             },
-             // the format of the data is the time based UUID represented as (time in utc)
-             // [YYYY]-[MM]-[DD]T[HH]:[mm]:[ss]:[nanoOfSecond]_[lsb-unsigned-long-as-space-padded-string]
-             // see akka.persistence.couchbase.internal.TimeBasedUUIDSerialization
-             // which makes it possible to sort as a string field and get the same order as sorting the actual time based UUIDs
-             "ordering": "1582-10-16T18:52:02.434002368_ 7093823767347982046",
-           }
-         ]
-       }
-     */
 
     // === per doc ===
     val PersistenceId = "persistence_id"
@@ -98,30 +69,7 @@ private[akka] final object CouchbaseSchema {
     val Tags = "tags"
 
     // metadata object fields
-    /*
-       Sample doc structure:
-       {
-         "type": "journal_metadata",
-         "deleted_to": 123, // if there are deleted events
-       }
-
-     */
     val DeletedTo = "deleted_to"
-
-    /*
-      Snapshot doc sample:
-      {
-        "sequence_nr": 15,
-        "ser_manifest": "",
-        // either of these two depending on serializer
-        "payload_bin": "rO0ABXQACHAyLWV2dC0x",
-        "payload": { json- }
-        "ser_id": 1,
-        "type": "snapshot",
-        "timestamp": 1542205413616,
-        "persistence_id": "p-1"
-      }
-     */
 
     val SerializerManifest = "ser_manifest"
     val SerializerId = "ser_id"
