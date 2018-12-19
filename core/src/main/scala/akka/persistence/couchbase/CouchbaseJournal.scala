@@ -4,7 +4,9 @@
 
 package akka.persistence.couchbase
 
-import akka.NotUsed
+import java.util.UUID
+
+import akka.{Done, NotUsed}
 import akka.annotation.InternalApi
 import akka.dispatch.ExecutionContexts
 import akka.event.Logging
@@ -22,9 +24,10 @@ import com.couchbase.client.java.query._
 import com.couchbase.client.java.query.consistency.ScanConsistency
 import com.typesafe.config.Config
 
+import scala.collection.JavaConverters._
 import scala.collection.{immutable => im}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -35,6 +38,8 @@ import scala.util.{Failure, Success, Try}
 private[akka] object CouchbaseJournal {
 
   final case class PersistentActorTerminated(persistenceId: String)
+
+  private final case class WriteFinished(persistenceId: String, f: Future[Done])
 
   private val ExtraSuccessFulUnit: Try[Unit] = Success(())
 
@@ -78,6 +83,10 @@ class CouchbaseJournal(config: Config, configPath: String)
   )
   def bucketName: String = settings.bucket
 
+  // if there are pending writes when an actor restarts we must wait for
+  // them to complete before we can read the highest sequence number or we will miss it
+  private val writesInProgress = new java.util.HashMap[String, Future[Done]]()
+
   protected val asyncSession: Future[CouchbaseSession] =
     CouchbaseSessionRegistry(system).sessionFor(settings.sessionSettings, settings.bucket)
   asyncSession.failed.foreach { ex =>
@@ -105,18 +114,34 @@ class CouchbaseJournal(config: Config, configPath: String)
     case PersistentActorTerminated(pid) =>
       log.debug("Persistent actor [{}] stopped, flushing tag-seq-nrs")
       evictSeqNrsFor(pid)
+    case WriteFinished(pid, f) =>
+      writesInProgress.remove(pid, f)
   }
 
   override def asyncWriteMessages(messages: im.Seq[AtomicWrite]): Future[im.Seq[Try[Unit]]] = {
     log.debug("asyncWriteMessages {}", messages)
     require(messages.nonEmpty)
-    val docsToInsert: Future[im.Seq[JsonDocument]] =
-      Future.sequence(messages.map(atomicWriteToJsonDoc)).andThen {
-        case Failure(ex) => ex.printStackTrace()
-        case _ =>
-      }
+    // Note that we assume that all messages have the same persistenceId, which is
+    // the case for Akka 2.4.2.
+    val pid = messages.head.persistenceId
+    val writeCompleted = Promise[Done]()
+    if (writesInProgress.put(pid, writeCompleted.future) ne null)
+      throw new IllegalStateException(s"Got write for pid $pid before previous write completed")
 
-    docsToInsert.flatMap(docs => Future.sequence(docs.map(insertJsonDoc)))
+    val writesCompleted = messages.map { write =>
+      val writeResult = atomicWriteToJsonDoc(write).flatMap(insertJsonDoc)
+      writeResult
+    }
+
+    val sequencedWrites = Future.sequence(writesCompleted)
+
+    sequencedWrites.onComplete {
+      case _ =>
+        self ! WriteFinished(pid, writeCompleted.future)
+        writeCompleted.success(Done)
+    }
+
+    sequencedWrites
   }
 
   private def insertJsonDoc(jsonDoc: JsonDocument): Future[Try[Unit]] =
@@ -210,7 +235,7 @@ class CouchbaseJournal(config: Config, configPath: String)
               if (startOfNextPage > toSequenceNr) {
                 None
               } else {
-                val endOfNextPage = math.min(startOfNextPage + settings.replayPageSize, toSequenceNr)
+                val endOfNextPage = math.min(startOfNextPage + settings.replayPageSize - 1, toSequenceNr)
                 Some(replayQuery(persistenceId, startOfNextPage, endOfNextPage, queryConsistency))
               }
             },
@@ -230,6 +255,7 @@ class CouchbaseJournal(config: Config, configPath: String)
           // For debugging while developing
           case Failure(ex) => log.error(ex, "Replay error for [{}]", persistenceId)
           case _ =>
+            log.debug("Replay completed for {}", persistenceId)
             // watch the persistent actor so that we can flush tag-seq-nrs for it when it stops
             context.watchWith(persistentActor, PersistentActorTerminated(persistenceId))
         }
@@ -241,22 +267,32 @@ class CouchbaseJournal(config: Config, configPath: String)
     }
   }
 
-  override def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] =
-    withCouchbaseSession { session =>
-      log.debug("asyncReadHighestSequenceNr({}, {})", persistenceId, fromSequenceNr)
-
-      val query = highestSequenceNrQuery(persistenceId, fromSequenceNr, queryConsistency)
-      log.debug("Executing: {}", query)
-
-      session
-        .singleResponseQuery(query)
-        .map {
-          case Some(jsonObj) =>
-            log.debug("sequence nr: {}", jsonObj)
-            if (jsonObj.get("max") != null) jsonObj.getLong("max")
-            else 0L
-          case None => // should never happen
-            0L
-        }
+  override def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] = {
+    val pendingWrite = Option(writesInProgress.get(persistenceId)) match {
+      case Some(f) =>
+        log.debug("Write in progress for {}, deferring highest seq nr until write completed", persistenceId)
+        f
+      case None => Future.successful(Done)
     }
+    pendingWrite.flatMap(
+      _ =>
+        withCouchbaseSession { session =>
+          log.debug("asyncReadHighestSequenceNr({}, {})", persistenceId, fromSequenceNr)
+
+          val query = highestSequenceNrQuery(persistenceId, fromSequenceNr, queryConsistency)
+          log.debug("Executing: {}", query)
+
+          session
+            .singleResponseQuery(query)
+            .map {
+              case Some(jsonObj) =>
+                log.debug("highest sequence nr for {}: {}", persistenceId, jsonObj)
+                if (jsonObj.get("max") != null) jsonObj.getLong("max")
+                else 0L
+              case None => // should never happen
+                0L
+            }
+      }
+    )
+  }
 }
