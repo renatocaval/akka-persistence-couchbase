@@ -81,6 +81,10 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       tag3Events.request(10)
       tag3Events.expectNextPF { case e @ EventEnvelope(_, `pid3`, 2L, `msg8`) => e }
       tag3Events.cancel()
+
+      a1 ! TestActor.Stop
+      a2 ! TestActor.Stop
+      a3 ! TestActor.Stop
     }
 
     "find events from offset " in new Setup {
@@ -124,6 +128,10 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       tag1Probe2.expectNextPF { case e @ EventEnvelope(_, `pid2`, 2L, `msg6`) => e }
       tag1Probe2.expectNoMessage(noMsgTimeout)
       tag1Probe2.cancel()
+
+      a1 ! TestActor.Stop
+      a2 ! TestActor.Stop
+      a3 ! TestActor.Stop
     }
 
     "find events from timestamp offset" in new Setup {
@@ -159,6 +167,9 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       offsetProbe.expectNextPF { case e @ EventEnvelope(_, `pid1`, 2L, `msg3`) => e }
       offsetProbe.expectNoMessage(noMsgTimeout)
       offsetProbe.cancel()
+
+      a1 ! TestActor.Stop
+      a2 ! TestActor.Stop
     }
 
     "find events from UUID offset" in new Setup {
@@ -189,6 +200,9 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       tagProbe2.request(10)
       tagProbe2.expectNextPF { case e @ EventEnvelope(_, `pid1`, 2L, `msg3`) => e }
       tagProbe2.cancel()
+
+      a1 ! TestActor.Stop
+      a2 ! TestActor.Stop
     }
 
     "stream many events" in new Setup {
@@ -224,6 +238,8 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       tagProbe.request(10)
       tagProbe.expectNoMessage(noMsgTimeout)
       tagProbe.cancel()
+
+      persistentActor ! TestActor.Stop
     }
   }
 
@@ -268,6 +284,9 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       val Seq(tag3evt1) =
         queries.currentEventsByTag(tag3, NoOffset).runWith(Sink.seq).futureValue
       tag3evt1 should matchPattern { case EventEnvelope(_, `pid1`, 3L, `msg2`) => }
+
+      a1 ! TestActor.Stop
+      a2 ! TestActor.Stop
     }
 
     "find existing events with an offset into a batch" in new Setup {
@@ -306,6 +325,8 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
           .futureValue
       tag1fromOffset should have size (1)
       tag1fromOffset.head should matchPattern { case EventEnvelope(_, `pid`, _, `msg3`) => }
+
+      persistentActor ! TestActor.Stop
     }
 
     "find existing events with an offset into multiple batches" in new Setup {
@@ -353,6 +374,9 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
 
       val allRead = (tag1FirstThree ++ tag1Fromoffset).map(_.event.toString).toSet
       allRead should ===(Set(msg1, msg3, msg5, msg7))
+
+      ref1 ! TestActor.Stop
+      ref2 ! TestActor.Stop
     }
 
   }

@@ -112,7 +112,7 @@ class CouchbaseJournal(config: Config, configPath: String)
 
   override def receivePluginInternal: Receive = {
     case PersistentActorTerminated(pid) =>
-      log.debug("Persistent actor [{}] stopped, flushing tag-seq-nrs")
+      log.debug("Persistent actor [{}] stopped, flushing tag-seq-nrs", sender().path)
       evictSeqNrsFor(pid)
     case WriteFinished(pid, f) =>
       writesInProgress.remove(pid, f)
@@ -206,9 +206,7 @@ class CouchbaseJournal(config: Config, configPath: String)
 
   override def asyncReplayMessages(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long)(
       recoveryCallback: PersistentRepr => Unit
-  ): Future[Unit] = {
-    val persistentActor = sender()
-
+  ): Future[Unit] =
     withCouchbaseSession { session =>
       log.debug("asyncReplayMessages({}, {}, {}, {})", persistenceId, fromSequenceNr, toSequenceNr, max)
 
@@ -256,8 +254,6 @@ class CouchbaseJournal(config: Config, configPath: String)
           case Failure(ex) => log.error(ex, "Replay error for [{}]", persistenceId)
           case _ =>
             log.debug("Replay completed for {}", persistenceId)
-            // watch the persistent actor so that we can flush tag-seq-nrs for it when it stops
-            context.watchWith(persistentActor, PersistentActorTerminated(persistenceId))
         }
 
         complete
@@ -265,9 +261,12 @@ class CouchbaseJournal(config: Config, configPath: String)
 
       replayFinished
     }
-  }
 
   override def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] = {
+    // watch the persistent actor so that we can flush tag-seq-nrs for it when it stops
+    // until we have akka/akka#25970 this is the place to do that
+    if (sender != system.deadLetters)
+      context.watchWith(sender(), PersistentActorTerminated(persistenceId))
     val pendingWrite = Option(writesInProgress.get(persistenceId)) match {
       case Some(f) =>
         log.debug("Write in progress for {}, deferring highest seq nr until write completed", persistenceId)
