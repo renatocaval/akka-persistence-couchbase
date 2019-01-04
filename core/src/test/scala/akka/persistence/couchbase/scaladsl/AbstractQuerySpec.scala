@@ -20,7 +20,9 @@ abstract class AbstractQuerySpec(testName: String)
       ActorSystem(
         testName,
         ConfigFactory.parseString("""
-            couchbase-journal.read.page-size = 10
+            couchbase-journal.read {
+              page-size = 10
+            }
             akka.loggers = ["akka.testkit.SilenceAllTestEventListener"]
             akka.loglevel=debug
           """).withFallback(ConfigFactory.load())

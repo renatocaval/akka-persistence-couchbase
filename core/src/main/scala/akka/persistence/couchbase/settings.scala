@@ -79,7 +79,7 @@ private[couchbase] final case class CouchbaseReadJournalSettings(sessionSettings
                                                                  eventByTagSettings: EventByTagSettings,
                                                                  dispatcher: String,
                                                                  warnAboutMissingIndexes: Boolean)
-final case class EventByTagSettings(eventualConsistencyDelay: FiniteDuration)
+final case class EventByTagSettings(eventualConsistencyDelay: FiniteDuration, getParallelism: Int)
 
 /**
  * INTERNAL API
@@ -96,7 +96,8 @@ private[couchbase] object CouchbaseReadJournalSettings {
 
     val eventByTagConfig = config.getConfig("read.events-by-tag")
     val eventByTagSettings = EventByTagSettings(
-      eventByTagConfig.getDuration("eventual-consistency-delay").toMillis.millis
+      eventByTagConfig.getDuration("eventual-consistency-delay").toMillis.millis,
+      eventByTagConfig.getInt("get-parallelism")
     )
     val liveQueryInterval = config.getDuration("read.live-query-interval").toMillis.millis
 

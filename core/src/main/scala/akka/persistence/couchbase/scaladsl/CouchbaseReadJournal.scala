@@ -14,7 +14,6 @@ import akka.persistence.couchbase.internal.{
   AsyncCouchbaseSession,
   CouchbaseSchema,
   N1qlQueryStage,
-  TimeBasedUUIDComparator,
   TimeBasedUUIDSerialization,
   TimeBasedUUIDs,
   UUIDTimestamp
@@ -33,7 +32,6 @@ import com.couchbase.client.java.query._
 import com.typesafe.config.Config
 
 import scala.collection.mutable
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
@@ -113,11 +111,11 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
     } yield {
 
       val indexNames = indexes.map(_.name()).toSet
-      Set("tags", "tags-ordering").foreach(
+      Set("tags-ordering-cover-meta").foreach(
         requiredIndex =>
           if (!indexNames(requiredIndex))
             log.warning(
-              "Missing the [{}] index, the events by tag query will not work without it, se plugin documentation for details",
+              "Missing the [{}] index, the events by tag query will not work without it, see plugin documentation for details",
               requiredIndex
           )
       )
@@ -295,29 +293,55 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
         TimeBasedUUIDSerialization.toSortableString(uuid)
       }
 
-      // note that the result is "unnested" into the message objects + the persistence id, so the normal
-      // document structure does not apply here
-      val taggedRows: Source[AsyncN1qlQueryRow, NotUsed] =
+      val taggedRowIds: Source[AsyncN1qlQueryRow, NotUsed] =
         Source
           .fromGraph(
             new N1qlQueryStage[String](
               live,
               n1qlQueryStageSettings,
-              eventsByTagQuery(tag, initialOrderingString, endOffset, settings.pageSize),
+              eventsByTagQueryIds(tag, initialOrderingString, endOffset, settings.pageSize),
               session.underlying,
               initialOrderingString, { ordering =>
-                Some(eventsByTagQuery(tag, ordering, endOffset, settings.pageSize))
+                Some(eventsByTagQueryIds(tag, ordering, endOffset, settings.pageSize))
               }, { (_, row) =>
                 row.value().getString(Fields.Ordering)
               }
             )
           )
 
-      taggedRows
-        .mapAsync(1) { row: AsyncN1qlQueryRow =>
-          val json = row.value()
-          CouchbaseSchema
-            .deserializeTaggedEvent(json, Long.MaxValue, serialization)
+      taggedRowIds
+        .mapAsync(settings.eventByTagSettings.getParallelism) { row =>
+          val value = row.value()
+          val id = value.getString("id")
+          val ordering = value.getString("ordering")
+          session.get(id).map {
+            case Some(doc) => (ordering, doc)
+            case None =>
+              throw new IllegalStateException(
+                s"Document from events by tag index not found. (concurrent deletes?). Id: $id"
+              )
+          }
+        }
+        .map {
+          case (ordering, doc) =>
+            val persistenceId = doc.content().getString(CouchbaseSchema.Fields.PersistenceId)
+            import scala.collection.JavaConverters._
+            val messages = doc.content().getArray("messages").iterator().asScala
+            val specificDoc = messages.find {
+              case jo: JsonObject => jo.getString(CouchbaseSchema.Fields.Ordering) == ordering
+              case _ => false
+            } match {
+              case Some(d: JsonObject) => d
+              case _ =>
+                throw new IllegalStateException(
+                  s"Expected to find doc ${doc} to have message with ordering ${ordering}"
+                )
+            }
+            (persistenceId, specificDoc)
+        }
+        .mapAsync(1) {
+          case (persistenceId, jsonObject) =>
+            CouchbaseSchema.deserializeTaggedEvent(persistenceId, jsonObject, Long.MaxValue, serialization)
         }
         .statefulMapConcat { () =>
           // out of order detection

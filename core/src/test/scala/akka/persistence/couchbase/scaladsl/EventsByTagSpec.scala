@@ -4,13 +4,14 @@
 
 package akka.persistence.couchbase.scaladsl
 
+import akka.persistence.couchbase.internal.TimeBasedUUIDComparator
 import akka.persistence.couchbase.{TestActor, UUIDs}
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
-import akka.persistence.query.{EventEnvelope, NoOffset}
+import akka.persistence.query.{EventEnvelope, NoOffset, TimeBasedUUID}
 import akka.stream.scaladsl.Sink
 import akka.stream.testkit.scaladsl.TestSink
-import akka.testkit.TestProbe
 
+import scala.math.Ordering.comparatorToOrdering
 import scala.collection.immutable
 import scala.concurrent.duration._
 
@@ -317,14 +318,18 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
         }
       }
 
+      system.log.info(s"Starting from offset: $offset")
+
       // offset into the same batch write
       val tag1fromOffset =
         queries
           .currentEventsByTag(tag1, offset)
           .runWith(Sink.seq)
           .futureValue
-      tag1fromOffset should have size (1)
-      tag1fromOffset.head should matchPattern { case EventEnvelope(_, `pid`, _, `msg3`) => }
+      withClue(s"Unexpected events from offset: $tag1fromOffset") {
+        tag1fromOffset should have size (1)
+        tag1fromOffset.head should matchPattern { case EventEnvelope(_, `pid`, _, `msg3`) => }
+      }
 
       persistentActor ! TestActor.Stop
     }
@@ -356,27 +361,36 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
         readingOurOwnWrites {
           val res = queries
             .currentEventsByTag(tag1, NoOffset)
-            .take(3)
+            .take(4)
             .runWith(Sink.seq)
             .futureValue
 
-          res should have size (3)
-          res
+          res should have size 4
+          res should ===(
+            res.sortBy(_.offset.asInstanceOf[TimeBasedUUID].value)(
+              comparatorToOrdering(TimeBasedUUIDComparator.comparator)
+            )
+          )
+          res.take(3)
         }
-
       // offset must be inside second batch of either actor
-      val tag1Fromoffset =
+      val newOffset = tag1FirstThree.last.offset
+      system.log.info(s"Starting from offset {}. First three events: {}", newOffset, tag1FirstThree)
+      val tag1FromOffset =
         queries
-          .currentEventsByTag(tag1, tag1FirstThree.last.offset)
+          .currentEventsByTag(tag1, newOffset)
           .runWith(Sink.seq)
           .futureValue
-      tag1Fromoffset should have size (1)
+      withClue(s"Unexpected events [$tag1FromOffset]") {
+        tag1FromOffset should have size 1
+      }
 
-      val allRead = (tag1FirstThree ++ tag1Fromoffset).map(_.event.toString).toSet
+      val allRead = (tag1FirstThree ++ tag1FromOffset).map(_.event.toString).toSet
       allRead should ===(Set(msg1, msg3, msg5, msg7))
 
       ref1 ! TestActor.Stop
       ref2 ! TestActor.Stop
+
     }
 
   }

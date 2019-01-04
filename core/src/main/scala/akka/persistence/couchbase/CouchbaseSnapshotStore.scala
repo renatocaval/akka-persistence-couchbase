@@ -57,7 +57,7 @@ final class CouchbaseSnapshotStore(cfg: Config, configPath: String) extends Snap
       val indexNames = indexes.map(_.name()).toSet
       if (!indexNames("snapshots"))
         log.error(
-          "Missing the [{}] index, the snapshot plugin will not work without it, se plugin documentation for details",
+          "Missing the [{}] index, the snapshot plugin will not work without it, see plugin documentation for details",
           "snapshots"
         )
     }

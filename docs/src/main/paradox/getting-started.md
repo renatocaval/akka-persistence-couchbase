@@ -38,13 +38,9 @@ CREATE INDEX `sequence-nrs` on `akka`
 If you will be using the query side with event-for-tags the following will also be required:
 
 ```
-CREATE INDEX `tags` ON `akka` 
-  (ALL ARRAY m.tags FOR m IN messages END)
-  WHERE `type` = "journal_message"
-  
-CREATE INDEX `tags-ordering` ON `akka` 
-  (DISTINCT ARRAY m.ordering FOR m IN messages END)
-  WHERE `type` = "journal_message"
+CREATE INDEX `tags` ON 
+`akka`((ALL (ARRAY (ALL (ARRAY [`t`, (`m`.`ordering`)] FOR `t` IN (`m`.`tags`) END)) FOR `m` IN `messages` END))) 
+WHERE (`type` = "journal_message")
 ```
 
 The snapshot plugin requires an additional index:

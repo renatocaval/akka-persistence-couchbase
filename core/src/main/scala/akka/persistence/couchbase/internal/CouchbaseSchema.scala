@@ -108,13 +108,13 @@ private[akka] final object CouchbaseSchema {
 
     private lazy val replayStatement =
       s"""
-         |SELECT a.persistence_id, a.writer_uuid, m.* FROM ${bucketName} a UNNEST messages AS m
-         |WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
-         |AND a.persistence_id = $$pid
-         |AND m.sequence_nr >= $$from
-         |AND m.sequence_nr <= $$to
-         |ORDER BY m.sequence_nr
-    """.stripMargin
+         SELECT a.persistence_id, a.writer_uuid, m.* FROM ${bucketName} a UNNEST messages AS m
+         WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
+         AND a.persistence_id = $$pid
+         AND m.sequence_nr >= $$from
+         AND m.sequence_nr <= $$to
+         ORDER BY m.sequence_nr
+    """
 
     protected def replayQuery(persistenceId: String, from: Long, to: Long, params: N1qlParams): N1qlQuery =
       N1qlQuery.parameterized(replayStatement,
@@ -125,24 +125,38 @@ private[akka] final object CouchbaseSchema {
                                 .put("to", to),
                               params)
 
-    /* Both these queries flattens the doc.messages (which can contain batched writes)
-     * into elements in the result and adds a field for the persistence id from
-     * the surrounding document. Note that the UNNEST name (m) must match the name used
-     * for the array value in the index or the index will not be used for these
+    /*
+     * The rationale behind this query is that indexed queries on
+     * arrays that aren't covering don't push down the limit and ordering
+     * meaning that every single tagged event is returned and then filtered
+     * meaning that it won't scale past a few thousand events.
+     * This query just gets the document id and ordering which means it is fully
+     * covered by the index meaning that the index does handle the ordering and limit.
+     *
+     * This is a known limit in Couchbase https://forums.couchbase.com/t/problems-getting-unnest-query-to-use-nested-array-index/19556/4
+     * and is not a high priority to fix so this query is used to get the ids then the key value
+     * api is used to get the actual events.
+     *
+     * The ordering comes back as null if m.ordering is used :-/
+     *
      */
-    private lazy val eventsByTagQuery =
-      s"""
-         |SELECT a.persistence_id, m.* FROM ${bucketName} a UNNEST messages AS m
-         |WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
-         |AND ARRAY_CONTAINS(m.tags, $$tag) = true
-         |AND m.ordering > $$fromOffset AND m.ordering <= $$toOffset
-         |ORDER BY m.ordering
-         |limit $$limit
-    """.stripMargin
 
-    protected def eventsByTagQuery(tag: String, fromOffset: String, toOffset: String, pageSize: Int): N1qlQuery =
+    private lazy val eventsByTagDocIds =
+      s"""
+         SELECT meta(a).id, [t, m.ordering][1] as ordering
+         FROM ${bucketName} a
+         UNNEST messages m
+         UNNEST m.tags t
+         WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
+         AND [t, m.ordering] >= [$$tag, SUCCESSOR($$fromOffset)]
+         AND [t, m.ordering] <= [$$tag, $$toOffset]
+         ORDER BY [t, m.ordering]
+         LIMIT $$limit
+       """
+
+    protected def eventsByTagQueryIds(tag: String, fromOffset: String, toOffset: String, pageSize: Int): N1qlQuery =
       N1qlQuery.parameterized(
-        eventsByTagQuery,
+        eventsByTagDocIds,
         JsonObject
           .create()
           .put("tag", tag)
@@ -152,6 +166,11 @@ private[akka] final object CouchbaseSchema {
           .put("toOffset", toOffset)
       )
 
+    /* Flattens the doc.messages (which can contain batched writes)
+     * into elements in the result and adds a field for the persistence id from
+     * the surrounding document. Note that the UNNEST name (m) must match the name used
+     * for the array value in the index or the index will not be used for these
+     */
     private lazy val eventsByPersistenceId =
       s"""
          |SELECT a.persistence_id, m.* from ${bucketName} a UNNEST messages AS m
@@ -322,11 +341,11 @@ private[akka] final object CouchbaseSchema {
   }
 
   def deserializeTaggedEvent(
+      persistenceId: String,
       value: JsonObject,
       toSequenceNr: Long,
       serialization: Serialization
   )(implicit ec: ExecutionContext, system: ActorSystem): Future[TaggedPersistentRepr] = {
-    val persistenceId = value.getString(Fields.PersistenceId)
     val writerUuid = value.getString(Fields.WriterUuid)
     val sequenceNr = value.getLong(Fields.SequenceNr)
     val tags: Set[String] = value.getArray(Fields.Tags).asScala.map(_.toString).toSet
