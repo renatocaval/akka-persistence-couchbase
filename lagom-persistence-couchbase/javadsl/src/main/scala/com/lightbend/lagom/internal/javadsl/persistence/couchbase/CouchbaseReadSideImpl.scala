@@ -13,7 +13,6 @@ import akka.dispatch.MessageDispatcher
 import akka.stream.alpakka.couchbase.javadsl.CouchbaseSession
 import com.lightbend.lagom.internal.persistence.couchbase.CouchbaseOffsetStore
 import com.lightbend.lagom.javadsl.persistence.couchbase.CouchbaseReadSide
-import com.lightbend.lagom.javadsl.persistence.couchbase.CouchbaseReadSide.ReadSideHandlerBuilder
 import com.lightbend.lagom.javadsl.persistence.{AggregateEvent, AggregateEventTag, Offset, ReadSideProcessor}
 import javax.inject.{Inject, Singleton}
 import play.api.inject.Injector
@@ -35,10 +34,10 @@ private[lagom] class CouchbaseReadSideImpl @Inject()(
       type Handler[E] = CouchbaseReadSideHandler.Handler[E]
 
       private var globalPrepareCallback: CouchbaseSession => CompletionStage[Done] =
-        session => CompletableFuture.completedFuture(Done.getInstance())
+        (_) => CompletableFuture.completedFuture(Done.getInstance())
 
       private var prepareCallback: (CouchbaseSession, AggregateEventTag[Event]) => CompletionStage[Done] =
-        (session, tag) => CompletableFuture.completedFuture(Done.getInstance())
+        (_, _) => CompletableFuture.completedFuture(Done.getInstance())
 
       private var handlers = Map.empty[Class[_ <: Event], Handler[Event]]
 

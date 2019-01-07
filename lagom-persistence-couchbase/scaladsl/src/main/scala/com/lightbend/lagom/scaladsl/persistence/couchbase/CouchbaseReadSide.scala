@@ -10,7 +10,6 @@ import com.lightbend.lagom.scaladsl.persistence.{AggregateEvent, AggregateEventT
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import akka.Done
-import akka.persistence.query.{NoOffset, Offset}
 import akka.stream.alpakka.couchbase.scaladsl.CouchbaseSession
 
 /**

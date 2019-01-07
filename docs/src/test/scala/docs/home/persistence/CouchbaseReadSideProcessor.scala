@@ -9,7 +9,7 @@ import akka.stream.alpakka.couchbase.scaladsl.CouchbaseSession
 import com.couchbase.client.java.document.JsonDocument
 import com.couchbase.client.java.document.json.JsonObject
 import com.lightbend.lagom.scaladsl.persistence.couchbase.CouchbaseReadSide
-import com.lightbend.lagom.scaladsl.persistence.{AggregateEventTag, EventStreamElement, ReadSide, ReadSideProcessor}
+import com.lightbend.lagom.scaladsl.persistence.{AggregateEventTag, EventStreamElement, ReadSideProcessor}
 
 import scala.concurrent.{ExecutionContext, Future}
 

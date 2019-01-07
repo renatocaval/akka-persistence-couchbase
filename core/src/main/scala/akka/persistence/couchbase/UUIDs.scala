@@ -3,7 +3,7 @@
  */
 
 package akka.persistence.couchbase
-import akka.persistence.couchbase.internal.{TimeBasedUUIDs, UUIDGenerator, UUIDTimestamp}
+import akka.persistence.couchbase.internal.{TimeBasedUUIDs, UUIDTimestamp}
 import akka.persistence.query.{NoOffset, Offset, TimeBasedUUID}
 
 object UUIDs {

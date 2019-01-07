@@ -20,8 +20,6 @@ import com.couchbase.client.java.query.{N1qlQuery, Statement}
 import com.couchbase.client.java.{AsyncBucket, AsyncCluster}
 import rx.RxReactiveStreams
 
-import scala.collection.immutable
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 

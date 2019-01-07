@@ -8,11 +8,10 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import java.util.Optional
 
-import akka.testkit.{ ImplicitSender, TestProbe }
+import akka.testkit.TestProbe
 import akka.actor.{ Actor, Props, UnhandledMessage }
 import akka.cluster.sharding.ShardRegion
 import com.lightbend.lagom.internal.javadsl.persistence.PersistentEntityActor
-import org.scalatest.WordSpecLike
 import com.lightbend.lagom.persistence.ActorSystemSpec
 
 object AbstractPersistentEntityActorSpec {
@@ -99,7 +98,7 @@ trait AbstractPersistentEntityActorSpec { spec: ActorSystemSpec =>
 
     "notify when recovery is completed" in {
       val probe = TestProbe()
-      val p = system.actorOf(PersistentEntityActor.props("test", Optional.of("3"),
+      system.actorOf(PersistentEntityActor.props("test", Optional.of("3"),
         () => new TestEntity(system, probe.ref), Optional.empty(), 10.seconds, "", ""))
       probe.expectMsgType[TestEntity.AfterRecovery]
     }

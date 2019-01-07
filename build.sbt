@@ -29,7 +29,8 @@ def common: Seq[Setting[_]] = Seq(
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
-    "-Xfuture"
+    "-Xfuture",
+    "-Xfatal-warnings"
   ),
   bintrayOrganization := Some("akka"),
   bintrayPackage := "akka-persistence-couchbase",

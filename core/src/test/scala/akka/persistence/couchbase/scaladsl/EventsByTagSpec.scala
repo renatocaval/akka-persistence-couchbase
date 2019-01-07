@@ -41,7 +41,7 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
   "liveEventsByTag" must {
 
     "find new events" in new Setup {
-      val (pid1, a1) = startPersistentActor(0)
+      val (_, a1) = startPersistentActor(0)
       val (pid2, a2) = startPersistentActor(0)
       val (pid3, a3) = startPersistentActor(0) // don't use until after query started
 
@@ -92,7 +92,7 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
 
       val (pid1, a1) = startPersistentActor(0)
       val (pid2, a2) = startPersistentActor(0)
-      val (pid3, a3) = startPersistentActor(0) // don't use until after query started
+      val (_, a3) = startPersistentActor(0) // don't use until after query started
 
       val tag1 = newTag() // green
       val tag2 = newTag() // apple
@@ -160,7 +160,7 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
       val tagProbe1 = queries.eventsByTag(tag, offset = NoOffset).runWith(TestSink.probe)
       tagProbe1.request(2)
       tagProbe1.expectNextPF { case e @ EventEnvelope(_, `pid1`, 1L, `msg1`) => e }
-      val evt2 = tagProbe1.expectNextPF { case e @ EventEnvelope(_, `pid2`, 1L, `msg2`) => e }
+      tagProbe1.expectNextPF { case e @ EventEnvelope(_, `pid2`, 1L, `msg2`) => e }
 
       val startOffset = UUIDs.timeBasedUUIDFrom(timestampBetween2And3)
       val offsetProbe = queries.eventsByTag(tag = tag, startOffset).runWith(TestSink.probe)
@@ -313,9 +313,9 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
             .runWith(Sink.head)
             .futureValue
 
-        tag1evt1 match {
-          case EventEnvelope(offset, `pid`, _, `msg1`) => offset
-        }
+        tag1evt1.persistenceId shouldEqual pid
+        tag1evt1.event shouldEqual msg1
+        tag1evt1.offset
       }
 
       system.log.info(s"Starting from offset: $offset")
@@ -327,7 +327,7 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
           .runWith(Sink.seq)
           .futureValue
       withClue(s"Unexpected events from offset: $tag1fromOffset") {
-        tag1fromOffset should have size (1)
+        tag1fromOffset should have size 1
         tag1fromOffset.head should matchPattern { case EventEnvelope(_, `pid`, _, `msg3`) => }
       }
 
@@ -335,8 +335,8 @@ class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
     }
 
     "find existing events with an offset into multiple batches" in new Setup {
-      val (pid1, ref1) = startPersistentActor(0)
-      val (pid2, ref2) = startPersistentActor(0)
+      val (_, ref1) = startPersistentActor(0)
+      val (_, ref2) = startPersistentActor(0)
       val tag1 = newTag()
       val tag2 = newTag()
       system.log.debug("tag1: {}, tag2: {}", tag1, tag2)

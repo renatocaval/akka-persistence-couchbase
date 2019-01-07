@@ -4,8 +4,6 @@
 
 package akka.persistence.couchbase
 
-import java.util.UUID
-
 import akka.{Done, NotUsed}
 import akka.annotation.InternalApi
 import akka.dispatch.ExecutionContexts
@@ -24,9 +22,8 @@ import com.couchbase.client.java.query._
 import com.couchbase.client.java.query.consistency.ScanConsistency
 import com.typesafe.config.Config
 
-import scala.collection.JavaConverters._
 import scala.collection.{immutable => im}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}

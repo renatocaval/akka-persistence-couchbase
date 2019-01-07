@@ -5,7 +5,7 @@
 package com.lightbend.lagom.scaladsl.persistence.couchbase
 
 import akka.event.Logging
-import akka.stream.alpakka.couchbase.{scaladsl, CouchbaseSessionRegistry, CouchbaseSessionSettings}
+import akka.stream.alpakka.couchbase.{CouchbaseSessionRegistry, CouchbaseSessionSettings}
 import akka.stream.alpakka.couchbase.scaladsl.CouchbaseSession
 import com.lightbend.lagom.internal.persistence.couchbase.{CouchbaseConfigValidator, CouchbaseOffsetStore}
 import com.lightbend.lagom.internal.scaladsl.persistence.couchbase.{

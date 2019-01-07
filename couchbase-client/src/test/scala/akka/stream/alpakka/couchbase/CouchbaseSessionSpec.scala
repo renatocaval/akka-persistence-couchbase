@@ -25,7 +25,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.compat.java8.FutureConverters._
 import scala.compat.java8.OptionConverters._
-import scala.concurrent.{Await, Future, TimeoutException}
+import scala.concurrent.{Future, TimeoutException}
 import scala.concurrent.duration._
 
 class CouchbaseSessionSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterAll with Eventually {
@@ -130,7 +130,7 @@ class CouchbaseSessionSpec extends WordSpec with Matchers with ScalaFutures with
     "write other document types than JSON" in {
       val bytes = Array.tabulate(5)(_.toByte)
       val doc = ByteArrayDocument.create("bin1", bytes)
-      val done = session.insertDoc(doc).toScala.futureValue
+      session.insertDoc(doc).toScala.futureValue
       val readDoc: ByteArrayDocument =
         session.get("bin1", classOf[ByteArrayDocument]).toScala.futureValue.get()
       readDoc.content() should ===(bytes)

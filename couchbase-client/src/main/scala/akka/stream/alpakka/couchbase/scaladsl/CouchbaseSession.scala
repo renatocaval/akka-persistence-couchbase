@@ -5,7 +5,6 @@
 package akka.stream.alpakka.couchbase.scaladsl
 
 import akka.annotation.DoNotInherit
-import akka.dispatch.ExecutionContexts
 import akka.stream.alpakka.couchbase.impl.{CouchbaseSessionImpl, RxUtilities}
 import akka.stream.alpakka.couchbase.javadsl.{CouchbaseSession => JavaDslCouchbaseSession}
 import akka.stream.alpakka.couchbase.{CouchbaseSessionSettings, CouchbaseWriteSettings}

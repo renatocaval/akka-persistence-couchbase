@@ -10,7 +10,4 @@ import akka.actor.ActorSystem
 /**
  * Internal API
  */
-private[lagom] class CouchbaseReadSideSettings @Inject()(system: ActorSystem) {
-  private val couchbaseConfig = system.settings.config.getConfig("lagom.persistence.read-side.couchbase")
-
-}
+private[lagom] class CouchbaseReadSideSettings @Inject()(system: ActorSystem) {}

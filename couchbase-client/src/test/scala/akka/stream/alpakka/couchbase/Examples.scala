@@ -28,6 +28,7 @@ class Examples {
     //#write-settings
     val couchbaseWriteSettings = CouchbaseWriteSettings(3, ReplicateTo.THREE, PersistTo.FOUR, 2.seconds)
     //#write-settings
+    blackhole(couchbaseWriteSettings)
 
   }
 
@@ -37,6 +38,7 @@ class Examples {
 
     val result: Future[JsonDocument] = session.insert(obj)
     // #by-single-id-flow
+    blackhole(result)
   }
 
   def get(): Unit = {
@@ -49,16 +51,17 @@ class Examples {
         .collect { case Some(doc) => doc }
         .runWith(Sink.seq)
     //#init-sourceBulk
+    result.onComplete(println) // Avoid compiler warning
   }
 
   def upsertSingleSinkSnippet(): Unit = {
     //#init-SingleSink
-    import akka.stream.scaladsl.Source
     import com.couchbase.client.java.document.JsonDocument
     val document: JsonDocument =
       JsonDocument.create("id-1", JsonObject.create().put("field", "First"))
     val done = session.upsert(document)
     //#init-SingleSink
+    blackhole(done)
   }
 
   def upsertBulkSinkSnippet(): Unit = {
@@ -83,6 +86,7 @@ class Examples {
     val done: Future[Done] = session.remove(documentId)
 
     //#delete-SingleSink
+    blackhole(source, done)
   }
 
   def deleteBulkSinkSnippet(): Unit = {
@@ -123,12 +127,15 @@ class Examples {
 
   def upsertSingleFlowSnippet(): Unit = {
     //#init-SingleFlow
-    import akka.stream.scaladsl.Source
     import com.couchbase.client.java.document.JsonDocument
     val document: JsonDocument = JsonDocument.create("id-1", JsonObject.create().put("field", "First"))
 
     val done: Future[JsonDocument] = session.upsert(document)
     //#init-SingleFlow
+    blackhole(done)
   }
+
+  // avoid compiler warnings
+  def blackhole(a: Any*): Unit = ???
 
 }

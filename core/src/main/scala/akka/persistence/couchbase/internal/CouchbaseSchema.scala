@@ -326,7 +326,7 @@ private[akka] final object CouchbaseSchema {
   def deserializeEvent[T](
       json: JsonObject,
       serialization: Serialization
-  )(implicit system: ActorSystem, ec: ExecutionContext): Future[PersistentRepr] = {
+  )(implicit system: ActorSystem): Future[PersistentRepr] = {
     val persistenceId = json.getString(Fields.PersistenceId)
     val sequenceNr: Long = json.getLong(Fields.SequenceNr)
     val writerUuid = json.getString(Fields.WriterUuid)

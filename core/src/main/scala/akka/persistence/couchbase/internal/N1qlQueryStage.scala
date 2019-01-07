@@ -5,7 +5,6 @@
 package akka.persistence.couchbase.internal
 
 import java.util
-import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.annotation.InternalApi
 import akka.stream.stage._

@@ -5,7 +5,7 @@
 package akka.persistence.couchbase
 
 import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestKit, TestProbe, WithLogCapturing}
+import akka.testkit.{ImplicitSender, TestKit, WithLogCapturing}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{Matchers, WordSpecLike}
 

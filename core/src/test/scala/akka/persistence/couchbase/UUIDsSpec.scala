@@ -4,9 +4,7 @@
 
 package akka.persistence.couchbase
 
-import java.util.UUID
-
-import akka.persistence.couchbase.internal.{TimeBasedUUIDs, UUIDTimestamp}
+import akka.persistence.couchbase.internal.UUIDTimestamp
 import akka.persistence.query.{NoOffset, TimeBasedUUID}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpec}
