@@ -100,7 +100,7 @@ class CouchbaseJournal(config: Config, configPath: String)
       Set("persistence-ids", "sequence-nrs").foreach { requiredIndex =>
         if (!indexNames(requiredIndex))
           log.error(
-            "Missing the [{}] index, the journal will not work without it, se plugin documentation for details",
+            "Missing the [{}] index, the journal will not work without it, see plugin documentation for details",
             requiredIndex
           )
       }
