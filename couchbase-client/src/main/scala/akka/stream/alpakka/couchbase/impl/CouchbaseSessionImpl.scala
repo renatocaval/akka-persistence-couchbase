@@ -71,7 +71,7 @@ final private[couchbase] class CouchbaseSessionImpl(asyncBucket: AsyncBucket, cl
     singleObservableToFuture(asyncBucket.upsert(document), document.id)
 
   def upsert(document: JsonDocument, writeSettings: CouchbaseWriteSettings): Future[JsonDocument] =
-    upsertDoc(document)
+    upsertDoc(document, writeSettings)
 
   def upsertDoc[T <: Document[_]](document: T, writeSettings: CouchbaseWriteSettings): Future[T] =
     singleObservableToFuture(asyncBucket.upsert(document,
