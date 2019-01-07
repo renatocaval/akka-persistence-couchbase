@@ -47,7 +47,7 @@ final class CouchbaseWriteSettings private (val parallelism: Int,
   /**
    * Java API:
    */
-  def withTimeOut(timeout: java.time.Duration): CouchbaseWriteSettings =
+  def withTimeout(timeout: java.time.Duration): CouchbaseWriteSettings =
     copy(timeout = FiniteDuration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
