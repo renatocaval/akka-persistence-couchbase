@@ -49,10 +49,7 @@ import scala.concurrent.{ExecutionContext, Future}
         currentTagSeqNrFromDb(pid, tag)
           .map {
             case Some(tagSeqNr) =>
-              log.debug("Got tagSeqNr {} from database for actor [{}] and tag [{}], fetching from database",
-                        tagSeqNr,
-                        pid,
-                        tag)
+              log.debug("Got tagSeqNr {} from database for actor [{}] and tag [{}]", tagSeqNr, pid, tag)
               tagSeqNr + 1
             case None =>
               log.debug("No previous tagSeqNr for actor [{}] and tag [{}], starting from 1", pid, tag)
@@ -83,7 +80,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
   protected def currentTagSeqNrFromDb(pid: PersistenceId, tag: Tag): Future[Option[Long]] =
     withCouchbaseSession { session =>
-      session.singleResponseQuery(highestTagSequenceNumberQuery(pid, tag, queryConsistency)).map {
+      val query = highestTagSequenceNumberQuery(pid, tag, queryConsistency)
+      log.debug("currentTagSeqNrFromDb: {}", query)
+      session.singleResponseQuery(query).map {
         case Some(json) => Some(json.getLong(Fields.TagSeqNr))
         case None => None
       }

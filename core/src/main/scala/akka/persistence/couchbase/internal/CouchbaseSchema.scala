@@ -228,15 +228,21 @@ private[akka] final object CouchbaseSchema {
             throw new RuntimeException(s"Failed looking up deleted messages for [$persistenceId]", ex)
         }
 
+    /**
+     * Find the the highest seqnr for a tag and pid, is this messy for the
+     * same reasons as described in the eventsByTagDocIds above.
+     */
     private lazy val highestTagSeqNr =
       s"""
-        SELECT t.seq_nr FROM ${bucketName} a
-        UNNEST messages AS m UNNEST m.tag_seq_nrs AS t
-        WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
-        AND a.persistence_id = $$pid
-        AND t.tag = $$tag
-        ORDER BY m.sequence_nr DESC
-        LIMIT 1
+         SELECT [a.persistence_id, t.tag, t.seq_nr][2] as seq_nr
+         FROM ${bucketName} AS a USE INDEX (`tag-seq-nrs`)
+         UNNEST a.messages AS m
+         UNNEST m.tag_seq_nrs AS t
+         WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
+         AND [a.persistence_id, t.tag, t.seq_nr] >= [$$pid, $$tag, SUCCESSOR(0)]
+         AND [a.persistence_id, t.tag, t.seq_nr] <= [$$pid, $$tag, ${Long.MaxValue}]
+         ORDER BY [a.persistence_id, t.tag, t.seq_nr] DESC
+         LIMIT 1
       """
 
     def highestTagSequenceNumberQuery(persistenceId: String, tag: String, params: N1qlParams): N1qlQuery =

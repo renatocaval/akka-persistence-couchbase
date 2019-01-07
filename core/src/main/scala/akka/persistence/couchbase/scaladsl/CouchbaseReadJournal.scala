@@ -359,7 +359,7 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
               case _ =>
                 throw new OutOfOrderEventException(
                   s"Detected out of order tagged event, for tag [$tag], persistence id [${tpr.pr.persistenceId}], sequence number [${tpr.pr.sequenceNr}], " +
-                  s"tagSeqNr $tagSeqNr, previous tagSeqNr: $previousTagSeqNr"
+                  s"tagSeqNr [$tagSeqNr], previous tagSeqNr [$previousTagSeqNr], offset [$offset]"
                 )
             }
             lastTagSeqNrPerPid.put(tpr.pr.persistenceId, tagSeqNr)

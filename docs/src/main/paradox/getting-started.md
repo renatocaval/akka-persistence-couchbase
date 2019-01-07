@@ -35,11 +35,15 @@ CREATE INDEX `sequence-nrs` on `akka`
   WHERE `type` = "journal_message"
 ```
 
-If you will be using the query side with event-for-tags the following will also be required:
+If you will be using the query side with event-for-tags the following two indexes will also be required:
 
 ```
 CREATE INDEX `tags` ON 
 `akka`((ALL (ARRAY (ALL (ARRAY [`t`, (`m`.`ordering`)] FOR `t` IN (`m`.`tags`) END)) FOR `m` IN `messages` END))) 
+WHERE (`type` = "journal_message")
+
+CREATE INDEX `tag-seq-nrs` ON 
+`akka`((ALL (ARRAY (ALL (ARRAY [`persistence_id`, `t`.`tag`, `t`.`seq_nr`] FOR `t` IN (`m`.`tag_seq_nrs`) END)) FOR `m` IN `messages` END))) 
 WHERE (`type` = "journal_message")
 ```
 

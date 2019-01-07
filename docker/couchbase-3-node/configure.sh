@@ -44,6 +44,7 @@ if [ "$TYPE" = "MASTER" ]; then
   cbq -u $USERNAME -p $PASSWORD -s "CREATE INDEX \`persistence-ids\` on \`akka\` (\`persistence_id\`) WHERE \`type\` = \"journal_message\""
   cbq -u $USERNAME -p $PASSWORD -s "CREATE INDEX \`sequence-nrs\` on \`akka\` (DISTINCT ARRAY m.sequence_nr FOR m in messages END) WHERE \`type\` = \"journal_message\""
   cbq -u $USERNAME -p $PASSWORD -s "CREATE INDEX \`tags\` ON \`akka\`((ALL (ARRAY (ALL (ARRAY [\`t\`, (\`m\`.\`ordering\`)] FOR \`t\` IN (\`m\`.\`tags\`) END)) FOR \`m\` IN \`messages\` END))) WHERE (\`type\` = \"journal_message\")"
+  cbq -u $USERNAME -p $PASSWORD -s "CREATE INDEX \`tag-seq-nrs\` ON \`akka\`((ALL (ARRAY (ALL (ARRAY [\`persistence_id\`, \`t\`.\`tag\`, \`t\`.\`seq_nr\`] FOR \`t\` IN (\`m\`.\`tag_seq_nrs\`) END)) FOR \`m\` IN \`messages\` END))) WHERE (\`type\` = \"journal_message\")"
   cbq -u $USERNAME -p $PASSWORD -s "CREATE INDEX \`snapshots\` ON \`akka\` (persistence_id, sequence_nr) WHERE akka.type = \"snapshot\""
 
   # rebalance once the other two nodes are added
