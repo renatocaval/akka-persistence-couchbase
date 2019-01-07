@@ -90,11 +90,13 @@ private[akka] final object CouchbaseSchema {
     // seems to be at worst as fast as the previous ORDER BY + LIMIT 1 query at least
     private lazy val highestSequenceNrStatement =
       s"""
-         |SELECT MAX(m.sequence_nr) AS max FROM ${bucketName} a UNNEST messages AS m
-         |WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
-         |AND a.persistence_id = $$pid
-         |AND m.sequence_nr >= $$from
-      """.stripMargin
+         SELECT MAX(m.sequence_nr) AS max
+         FROM ${bucketName} a USE INDEX (`persistence-ids`, `sequence-nrs`)
+         UNNEST messages AS m
+         WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
+         AND a.persistence_id = $$pid
+         AND m.sequence_nr >= $$from
+      """
 
     protected def highestSequenceNrQuery(persistenceId: String, fromSequenceNr: Long, params: N1qlParams): N1qlQuery =
       N1qlQuery.parameterized(
@@ -108,7 +110,9 @@ private[akka] final object CouchbaseSchema {
 
     private lazy val replayStatement =
       s"""
-         SELECT a.persistence_id, a.writer_uuid, m.* FROM ${bucketName} a UNNEST messages AS m
+         SELECT a.persistence_id, a.writer_uuid, m.*
+         FROM ${bucketName} a USE INDEX (`persistence-ids`, `sequence-nrs`)
+         UNNEST messages AS m
          WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
          AND a.persistence_id = $$pid
          AND m.sequence_nr >= $$from
@@ -144,7 +148,7 @@ private[akka] final object CouchbaseSchema {
     private lazy val eventsByTagDocIds =
       s"""
          SELECT meta(a).id, [t, m.ordering][1] as ordering
-         FROM ${bucketName} a
+         FROM ${bucketName} a USE INDEX (tags)
          UNNEST messages m
          UNNEST m.tags t
          WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
@@ -173,13 +177,15 @@ private[akka] final object CouchbaseSchema {
      */
     private lazy val eventsByPersistenceId =
       s"""
-         |SELECT a.persistence_id, m.* from ${bucketName} a UNNEST messages AS m
-         |WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
-         |AND a.persistence_id = $$pid
-         |AND m.sequence_nr  >= $$from
-         |AND m.sequence_nr <= $$to
-         |ORDER by m.sequence_nr
-         |LIMIT $$limit
+         SELECT a.persistence_id, m.*
+         FROM ${bucketName} a USE INDEX (`persistence-ids`, `sequence-nrs`)
+         UNNEST messages AS m
+         WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
+         AND a.persistence_id = $$pid
+         AND m.sequence_nr  >= $$from
+         AND m.sequence_nr <= $$to
+         ORDER by m.sequence_nr
+         LIMIT $$limit
     """.stripMargin
 
     protected def eventsByPersistenceIdQuery(persistenceId: String,
@@ -197,10 +203,11 @@ private[akka] final object CouchbaseSchema {
     // IS NOT NULL is needed to hit the index
     private lazy val persistenceIds =
       s"""
-         |SELECT DISTINCT(persistence_id) FROM ${bucketName}
-         |WHERE type = "${CouchbaseSchema.JournalEntryType}"
-         |AND persistence_id IS NOT NULL
-     """.stripMargin
+         SELECT DISTINCT(persistence_id)
+         FROM ${bucketName} USE INDEX (`persistence-ids`)
+         WHERE type = "${CouchbaseSchema.JournalEntryType}"
+         AND persistence_id IS NOT NULL
+     """
 
     protected def persistenceIdsQuery(): N1qlQuery =
       N1qlQuery.simple(persistenceIds)
@@ -223,13 +230,14 @@ private[akka] final object CouchbaseSchema {
 
     private lazy val highestTagSeqNr =
       s"""
-        |SELECT t.seq_nr from ${bucketName} a UNNEST messages AS m UNNEST m.tag_seq_nrs AS t
-        |WHERE a.type = "journal_message"
-        |AND a.persistence_id = $$pid
-        |AND t.tag = $$tag
-        |ORDER BY m.sequence_nr DESC
-        |LIMIT 1
-      """.stripMargin
+        SELECT t.seq_nr FROM ${bucketName} a
+        UNNEST messages AS m UNNEST m.tag_seq_nrs AS t
+        WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
+        AND a.persistence_id = $$pid
+        AND t.tag = $$tag
+        ORDER BY m.sequence_nr DESC
+        LIMIT 1
+      """
 
     def highestTagSequenceNumberQuery(persistenceId: String, tag: String, params: N1qlParams): N1qlQuery =
       N1qlQuery.parameterized(highestTagSeqNr,
