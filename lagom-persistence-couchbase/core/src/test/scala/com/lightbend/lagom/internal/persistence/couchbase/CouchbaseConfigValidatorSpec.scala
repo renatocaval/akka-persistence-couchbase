@@ -44,7 +44,7 @@ class CouchbaseConfigValidatorSpec extends WordSpec with MustMatchers with Befor
     "pass when bucket is specified" in {
       val config = ConfigFactory.parseString("""sample.path.bucket = bucketname""".stripMargin)
       // expect only one "another error" in the log
-      EventFilter.error(occurrences = 1) intercept {
+      EventFilter.error(occurrences = 1).intercept {
         CouchbaseConfigValidator.validateBucket("sample.path", config, log)
         log.error("another error")
       }

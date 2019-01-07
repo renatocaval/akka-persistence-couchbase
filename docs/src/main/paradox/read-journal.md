@@ -16,7 +16,7 @@ and especially the tag-related queries if you intend to use the tagging queries.
 Accessing the (default) read journal can be done through an extension
 
 Scala
-:  @@snip(/core/src/test/scala/akka/persistence/couchbase/scaladsl/AbstractQuerySpec.scala) { #read-journal-access }  
+:  @@snip(/core/src/test/scala/akka/persistence/couchbase/scaladsl/AbstractCouchbaseSpec.scala) { #read-journal-access }  
 
 Java
 :  @@snip(/core/src/test/java/akka/persistence/couchbase/javadsl/CouchbaseReadJournalTest.java) { #read-journal-access }

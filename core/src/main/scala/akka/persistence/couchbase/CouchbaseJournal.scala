@@ -18,6 +18,7 @@ import akka.stream.alpakka.couchbase.CouchbaseSessionRegistry
 import akka.stream.alpakka.couchbase.scaladsl.CouchbaseSession
 import akka.stream.scaladsl.{Sink, Source}
 import com.couchbase.client.java.document.JsonDocument
+import com.couchbase.client.java.document.json.JsonObject
 import com.couchbase.client.java.query._
 import com.couchbase.client.java.query.consistency.ScanConsistency
 import com.typesafe.config.Config
@@ -260,6 +261,12 @@ class CouchbaseJournal(config: Config, configPath: String)
     }
 
   override def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] = {
+    def toLong(in: Option[JsonObject]): Long = in match {
+      case Some(jsonObj) if jsonObj.get("max") != null =>
+        jsonObj.getLong("max")
+      case _ =>
+        0L
+    }
     // watch the persistent actor so that we can flush tag-seq-nrs for it when it stops
     // until we have akka/akka#25970 this is the place to do that
     if (sender != system.deadLetters)
@@ -273,21 +280,24 @@ class CouchbaseJournal(config: Config, configPath: String)
     pendingWrite.flatMap(
       _ =>
         withCouchbaseSession { session =>
-          log.debug("asyncReadHighestSequenceNr({}, {})", persistenceId, fromSequenceNr)
+          log.debug("asyncReadHighestSequenceNr {} {}", persistenceId, fromSequenceNr)
 
           val query = highestSequenceNrQuery(persistenceId, fromSequenceNr, queryConsistency)
           log.debug("Executing: {}", query)
-
-          session
-            .singleResponseQuery(query)
-            .map {
-              case Some(jsonObj) =>
-                log.debug("highest sequence nr for {}: {}", persistenceId, jsonObj)
-                if (jsonObj.get("max") != null) jsonObj.getLong("max")
-                else 0L
-              case None => // should never happen
-                0L
+          for {
+            seqNr <- session.singleResponseQuery(query).map(toLong)
+            nextSequenceNr <- session.get(CouchbaseSchema.documentId(persistenceId, seqNr + 1))
+          } yield {
+            nextSequenceNr match {
+              case None =>
+                seqNr
+              case Some(_) =>
+                throw new RuntimeException(
+                  s"Read highest sequence nr $seqNr but found document with id ${CouchbaseSchema
+                    .documentId(persistenceId, seqNr + 1)}"
+                )
             }
+          }
       }
     )
   }

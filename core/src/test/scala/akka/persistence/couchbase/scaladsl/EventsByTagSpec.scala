@@ -29,7 +29,7 @@ class Tagger extends WriteEventAdapter {
   override def manifest(event: Any): String = ""
 }
 
-class EventsByTagSpec extends AbstractQuerySpec("EventsByTagSpec") {
+class EventsByTagSpec extends AbstractCouchbaseSpec("EventsByTagSpec") {
 
   // use unique tags for each test to isolate
   var tagCounter = 0

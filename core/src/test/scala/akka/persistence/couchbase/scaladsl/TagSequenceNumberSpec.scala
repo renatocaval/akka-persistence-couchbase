@@ -19,7 +19,7 @@ import com.couchbase.client.java.query.consistency.ScanConsistency
 import scala.concurrent.duration._
 
 class TagSequenceNumberSpec
-    extends AbstractQuerySpec("TagSequenceNumberSpec")
+    extends AbstractCouchbaseSpec("TagSequenceNumberSpec")
     with AsyncCouchbaseSession
     with Queries
     with TagSequenceNumbering {

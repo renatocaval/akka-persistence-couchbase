@@ -9,24 +9,15 @@ import akka.persistence.couchbase.{CouchbaseBucketSetup, TestActor}
 import akka.persistence.query.PersistenceQuery
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.{TestKit, TestProbe, WithLogCapturing}
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-abstract class AbstractQuerySpec(testName: String)
+abstract class AbstractCouchbaseSpec(testName: String, config: Config)
     extends TestKit(
-      ActorSystem(
-        testName,
-        ConfigFactory.parseString("""
-            couchbase-journal.read {
-              page-size = 10
-            }
-            akka.loggers = ["akka.testkit.SilenceAllTestEventListener"]
-            akka.loglevel=debug
-          """).withFallback(ConfigFactory.load())
-      )
+      ActorSystem(testName, config.withFallback(ConfigFactory.load()))
     )
     with WordSpecLike
     with BeforeAndAfterAll
@@ -34,6 +25,18 @@ abstract class AbstractQuerySpec(testName: String)
     with ScalaFutures
     with CouchbaseBucketSetup
     with WithLogCapturing {
+
+  def this(testName: String) =
+    this(
+      testName,
+      ConfigFactory.parseString("""
+            couchbase-journal.read {
+              page-size = 10
+            }
+            akka.loggers = ["akka.testkit.SilenceAllTestEventListener"]
+            akka.loglevel=debug
+          """)
+    )
 
   var idCounter = 0
   def nextPersistenceId(): String = {

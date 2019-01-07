@@ -243,6 +243,8 @@ private[akka] final object CouchbaseSchema {
 
   def snapshotIdFor(metadata: SnapshotMetadata): String = s"${metadata.persistenceId}-${metadata.sequenceNr}-snapshot"
 
+  def documentId(pid: String, lowestSequenceNr: Long): String = s"$pid-$lowestSequenceNr"
+
   def metadataIdFor(persistenceId: String): String = s"$persistenceId-meta"
 
   def metadataEntry(persistenceId: String, deletedTo: Long): JsonDocument =
