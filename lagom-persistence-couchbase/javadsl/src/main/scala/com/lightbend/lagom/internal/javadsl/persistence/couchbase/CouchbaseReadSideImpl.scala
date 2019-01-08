@@ -28,8 +28,10 @@ private[lagom] class CouchbaseReadSideImpl @Inject()(
   private val dispatcher = system.settings.config.getString("lagom.persistence.read-side.use-dispatcher")
   private implicit val ec: MessageDispatcher = system.dispatchers.lookup(dispatcher)
 
-  override def builder[Event <: AggregateEvent[Event]](readSideId: String): ReadSideHandlerBuilder[Event] =
-    new ReadSideHandlerBuilder[Event] {
+  override def builder[Event <: AggregateEvent[Event]](
+      readSideId: String
+  ): CouchbaseReadSide.ReadSideHandlerBuilder[Event] =
+    new CouchbaseReadSide.ReadSideHandlerBuilder[Event] {
 
       type Handler[E] = CouchbaseReadSideHandler.Handler[E]
 
@@ -43,14 +45,14 @@ private[lagom] class CouchbaseReadSideImpl @Inject()(
 
       override def setGlobalPrepare(
           callback: JFunction[CouchbaseSession, CompletionStage[Done]]
-      ): ReadSideHandlerBuilder[Event] = {
+      ): CouchbaseReadSide.ReadSideHandlerBuilder[Event] = {
         globalPrepareCallback = callback.apply
         this
       }
 
       override def setPrepare(
           callback: BiFunction[CouchbaseSession, AggregateEventTag[Event], CompletionStage[Done]]
-      ): ReadSideHandlerBuilder[Event] = {
+      ): CouchbaseReadSide.ReadSideHandlerBuilder[Event] = {
         prepareCallback = callback.apply
         this
       }
@@ -58,7 +60,7 @@ private[lagom] class CouchbaseReadSideImpl @Inject()(
       override def setEventHandler[E <: Event](
           eventClass: Class[E],
           handler: CouchbaseReadSide.TriConsumer[CouchbaseSession, E, Offset, CompletionStage[Done]]
-      ): ReadSideHandlerBuilder[Event] = {
+      ): CouchbaseReadSide.ReadSideHandlerBuilder[Event] = {
         handlers += (eventClass -> ((cs: CouchbaseSession, event: E, offset: Offset) => handler(cs, event, offset)))
         this
       }
@@ -66,7 +68,7 @@ private[lagom] class CouchbaseReadSideImpl @Inject()(
       override def setEventHandler[E <: Event](
           eventClass: Class[E],
           handler: BiFunction[CouchbaseSession, E, CompletionStage[Done]]
-      ): ReadSideHandlerBuilder[Event] = {
+      ): CouchbaseReadSide.ReadSideHandlerBuilder[Event] = {
         handlers += (eventClass -> ((cs: CouchbaseSession, event: E, offset: Offset) => handler(cs, event)))
         this
       }
