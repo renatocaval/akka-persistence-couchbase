@@ -123,23 +123,26 @@ class EventsByPersistenceIdSpec extends AbstractCouchbaseSpec("EventsByPersisten
     }
 
     "not see new events after the query was triggered, across page size" in new Setup {
-      override def initialPersistedEvents = queries.settings.pageSize + 1
+      override def initialPersistedEvents = queries.settings.pageSize
 
+      val margin = queries.settings.pageSize / 2
       readingOurOwnWrites {
-        val evts = queries
+        val events = queries
           .currentEventsByPersistenceId(pid, 0L, Long.MaxValue)
           .runWith(Sink.seq)
           .futureValue
-        evts should have size (initialPersistedEvents.toLong)
+        events should have size initialPersistedEvents.toLong
       }
-
+      system.log.info("starting current query")
       val src = queries.currentEventsByPersistenceId(pid, 0L, Long.MaxValue)
-      val notTheEntireFirstPage = queries.settings.pageSize - 1L
+      val notTheEntireFirstPage = queries.settings.pageSize - margin
+      val events1toNotFullPage = (1 to notTheEntireFirstPage).map(n => s"$pid-$n")
+      system.log.info("Initial expect: " + events1toNotFullPage)
       val streamProbe = src
         .map(_.event)
         .runWith(TestSink.probe[Any])
-        .request(notTheEntireFirstPage)
-        .expectNextN((1L to notTheEntireFirstPage).map(n => s"$pid-$n"))
+        .request(notTheEntireFirstPage.toLong)
+        .expectNextN(events1toNotFullPage)
         .expectNoMessage(noMsgTimeout)
 
       // this event that is written after the query was triggered should not be included in the result
@@ -147,23 +150,22 @@ class EventsByPersistenceIdSpec extends AbstractCouchbaseSpec("EventsByPersisten
       persistentActor ! s"$pid-$seqNrAfterInitial"
       probe.expectMsg(s"$pid-$seqNrAfterInitial-done")
 
-      // make sure we could observe the new event
+      // make sure we could observe the new event in a new query
       readingOurOwnWrites {
-        val evts = queries
+        val events = queries
           .currentEventsByPersistenceId(pid, initialPersistedEvents + 1L, Long.MaxValue)
           .runWith(Sink.seq)
           .futureValue
-        evts.map(_.event) should ===(List(s"$pid-$seqNrAfterInitial"))
+        events.map(_.event) should ===(List(s"$pid-$seqNrAfterInitial"))
       }
 
-      // here comes the weird part, the query stage should fill up one page and not do another query until
-      // we reach the end of it, but then that second query should see the new event and fail this test
-      // but it doesn't
+      val expectedEvents = ((notTheEntireFirstPage + 1L) to initialPersistedEvents.toLong).map(n => s"$pid-$n")
+      system.log.info("Second expect: " + expectedEvents)
       streamProbe
         .expectNoMessage(noMsgTimeout)
-        .request(5)
+        .request(margin * 2L)
         // last events that was in db when query was triggered
-        .expectNextN(((notTheEntireFirstPage + 1L) to initialPersistedEvents.toLong).map(n => s"$pid-$n"))
+        .expectNextN(expectedEvents)
         .expectComplete() // but not the event that was written after query is not seen
 
     }

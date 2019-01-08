@@ -18,7 +18,6 @@ import akka.stream.alpakka.couchbase.CouchbaseSessionRegistry
 import akka.stream.alpakka.couchbase.scaladsl.CouchbaseSession
 import akka.stream.scaladsl.{Sink, Source}
 import com.couchbase.client.java.document.JsonDocument
-import com.couchbase.client.java.document.json.JsonObject
 import com.couchbase.client.java.query._
 import com.couchbase.client.java.query.consistency.ScanConsistency
 import com.typesafe.config.Config
@@ -133,10 +132,9 @@ class CouchbaseJournal(config: Config, configPath: String)
 
     val sequencedWrites = Future.sequence(writesCompleted)
 
-    sequencedWrites.onComplete {
-      case _ =>
-        self ! WriteFinished(pid, writeCompleted.future)
-        writeCompleted.success(Done)
+    sequencedWrites.onComplete { _ =>
+      self ! WriteFinished(pid, writeCompleted.future)
+      writeCompleted.success(Done)
     }
 
     sequencedWrites
@@ -146,7 +144,7 @@ class CouchbaseJournal(config: Config, configPath: String)
     withCouchbaseSession { session =>
       session
         .insert(jsonDoc, settings.writeSettings)
-        .map(json => ExtraSuccessFulUnit)(ExecutionContexts.sameThreadExecutionContext)
+        .map(_ => ExtraSuccessFulUnit)(ExecutionContexts.sameThreadExecutionContext)
         .recover {
           // lift the failure to not fail the whole sequence
           case NonFatal(ex) => Failure(ex)
@@ -235,7 +233,7 @@ class CouchbaseJournal(config: Config, configPath: String)
                 Some(replayQuery(persistenceId, startOfNextPage, endOfNextPage, queryConsistency))
               }
             },
-            (endOfPage, row) => row.value().getLong(Fields.SequenceNr)
+            (_, row) => row.value().getLong(Fields.SequenceNr)
           )
         )
 
@@ -261,12 +259,6 @@ class CouchbaseJournal(config: Config, configPath: String)
     }
 
   override def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] = {
-    def toLong(in: Option[JsonObject]): Long = in match {
-      case Some(jsonObj) if jsonObj.get("max") != null =>
-        jsonObj.getLong("max")
-      case _ =>
-        0L
-    }
     // watch the persistent actor so that we can flush tag-seq-nrs for it when it stops
     // until we have akka/akka#25970 this is the place to do that
     if (sender != system.deadLetters)
@@ -284,13 +276,15 @@ class CouchbaseJournal(config: Config, configPath: String)
 
           val query = highestSequenceNrQuery(persistenceId, fromSequenceNr, queryConsistency)
           log.debug("Executing: {}", query)
+
           for {
-            seqNr <- session.singleResponseQuery(query).map(toLong)
+            seqNr <- session
+              .singleResponseQuery(query)
+              .map(mapHighestSequenceNr)(ExecutionContexts.sameThreadExecutionContext)
             nextSequenceNr <- session.get(CouchbaseSchema.documentId(persistenceId, seqNr + 1))
           } yield {
             nextSequenceNr match {
-              case None =>
-                seqNr
+              case None => seqNr
               case Some(_) =>
                 throw new RuntimeException(
                   s"Read highest sequence nr $seqNr but found document with id ${CouchbaseSchema

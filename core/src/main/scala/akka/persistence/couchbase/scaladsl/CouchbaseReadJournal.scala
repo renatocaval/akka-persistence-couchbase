@@ -120,9 +120,7 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
           )
       )
     }
-    checkF.onComplete {
-      case _ => materializer.shutdown()
-    }
+    checkF.onComplete(_ => materializer.shutdown())
   }
 
   /**
@@ -161,7 +159,22 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
   override def currentEventsByPersistenceId(persistenceId: String,
                                             fromSequenceNr: Long,
                                             toSequenceNr: Long): Source[EventEnvelope, NotUsed] =
-    internalEventsByPersistenceId(live = false, persistenceId, fromSequenceNr, toSequenceNr)
+    Source
+      .lazilyAsync { () =>
+        (if (toSequenceNr == Long.MaxValue) {
+           withCouchbaseSession { session =>
+             session
+               .singleResponseQuery(highestSequenceNrQuery(persistenceId, fromSequenceNr, N1qlParams.build()))
+               .map(mapHighestSequenceNr)
+           }
+         } else {
+           Future.successful(toSequenceNr)
+         }).map { toSeq =>
+          internalEventsByPersistenceId(live = false, persistenceId, fromSequenceNr, toSeq)
+        }
+      }
+      .flatMapConcat(identity)
+      .mapMaterializedValue(_ => NotUsed)
 
   private def internalEventsByPersistenceId(live: Boolean,
                                             persistenceId: String,
@@ -284,7 +297,7 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
             // offset delay ms back in time from now
             TimeBasedUUIDs.create(
               UUIDTimestamp.fromUnixTimestamp(
-                System.currentTimeMillis() - (settings.eventByTagSettings.eventualConsistencyDelay.toMillis)
+                System.currentTimeMillis() - settings.eventByTagSettings.eventualConsistencyDelay.toMillis
               ),
               TimeBasedUUIDs.MinLSB
             )
@@ -417,7 +430,7 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
       .statefulMapConcat[String] { () =>
         var seenIds = Set.empty[String]
 
-        { (row) =>
+        { row =>
           val id = row.value().getString(Fields.PersistenceId)
           if (seenIds.contains(id)) Nil
           else {

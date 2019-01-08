@@ -253,6 +253,13 @@ private[akka] final object CouchbaseSchema {
                                 .put("tag", tag),
                               params)
 
+    def mapHighestSequenceNr(option: Option[JsonObject]): Long = option match {
+      case Some(jsonObj) =>
+        if (jsonObj.get("max") != null) jsonObj.getLong("max")
+        else 0L
+      case None => // should never happen
+        0L
+    }
   }
 
   def snapshotIdFor(metadata: SnapshotMetadata): String = s"${metadata.persistenceId}-${metadata.sequenceNr}-snapshot"
