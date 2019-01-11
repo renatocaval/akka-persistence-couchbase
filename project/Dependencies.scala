@@ -8,9 +8,8 @@ object Dependencies {
 
   val AkkaVersion = "2.5.19"
   val LagomVersion = "1.5.0-M3"
-
   object Compile {
-    val couchbaseClient = "com.couchbase.client" % "java-client" % "2.7.0" // Apache V2
+    val couchbaseClient = "com.couchbase.client" % "java-client" % "2.7.2" // Apache V2
 
     // used to easily convert rxjava into reactive streams and then into akka streams
     val rxJavaReactiveStreams = "io.reactivex" % "rxjava-reactive-streams" % "1.2.1" // Apache V2
