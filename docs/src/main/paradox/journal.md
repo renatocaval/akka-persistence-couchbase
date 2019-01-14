@@ -55,12 +55,13 @@ The structure of the document is like this:
        "payload_bin": "rO0ABXQACHAyLWV2dC0x",
        // or native json if using a `akka.persistence.couchbase.JsonSerializer` (see serialization section of docs)
        "payload": { json-for-event },
-       // these next three fields are only present if the event was tagged
-       "tags": [ "tag1", "tag2" ],
-       "tag-seq-nrs": {
-         "tag1": 5,
-         "tag2": 1
-       },
+       // only present if the event was tagged
+       "tags": [
+         {
+           "tag": "tag-1",
+           "seq_nr": 4 // seqnr is a counter per tag and persistence id to detect holes or out of order delivery 
+         }
+       ],
        // the format of the data is the time based UUID represented as (time in utc)
        // [YYYY]-[MM]-[DD]T[HH]:[mm]:[ss]:[nanoOfSecond]_[lsb-unsigned-long-as-space-padded-string]
        // see akka.persistence.couchbase.internal.TimeBasedUUIDSerialization

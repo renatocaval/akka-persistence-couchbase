@@ -361,7 +361,7 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
           val lastTagSeqNrPerPid = mutable.Map.empty[String, Long]
 
           { tpr =>
-            val tagSeqNr = tpr.tagSequenceNumbers(tag)
+            val tagSeqNr = tpr.tags(tag)
             log.debug("Saw tagSeqNr {} for tag {} and pid {}", tagSeqNr, tag, tpr.pr.persistenceId)
             val previousTagSeqNr = lastTagSeqNrPerPid.get(tpr.pr.persistenceId)
 

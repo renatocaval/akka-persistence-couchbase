@@ -32,16 +32,20 @@ import scala.util.control.NonFatal
 private[akka] final object CouchbaseSchema {
 
   sealed class MessageForWrite(val sequenceNr: Long, val msg: SerializedMessage)
+
+  /**
+   * @param tags each tag and the corresponding sequence number for it
+   */
   final class TaggedMessageForWrite(sequenceNr: Long,
                                     msg: SerializedMessage,
                                     val ordering: UUID,
-                                    val tagsWithSeqNrs: im.Seq[(String, Long)])
+                                    val tags: im.Seq[(String, Long)])
       extends MessageForWrite(sequenceNr, msg)
 
-  final case class TaggedPersistentRepr(pr: PersistentRepr,
-                                        tags: Set[String],
-                                        tagSequenceNumbers: Map[String, Long],
-                                        offset: UUID)
+  /**
+   * @param tags each tag and the corresponding sequence number for it
+   */
+  final case class TaggedPersistentRepr(pr: PersistentRepr, tags: Map[String, Long], offset: UUID)
 
   object Fields {
     val Type = "type"
@@ -53,10 +57,6 @@ private[akka] final object CouchbaseSchema {
     val PersistenceId = "persistence_id"
     val WriterUuid = "writer_uuid"
     val Messages = "messages"
-    val TagSeqNrs = "tag_seq_nrs"
-    // per tag
-    val Tag = "tag"
-    val TagSeqNr = "seq_nr"
 
     // === per message/event ===
     val SequenceNr = "sequence_nr"
@@ -65,8 +65,11 @@ private[akka] final object CouchbaseSchema {
     // separate fields for json and base64 bin payloads
     val JsonPayload = "payload"
     val BinaryPayload = "payload_bin"
-    // the specific tags on an individual message
+    // each tag and corresponding tag sequence number
     val Tags = "tags"
+    // per tag
+    val Tag = "tag"
+    val TagSeqNr = "seq_nr"
 
     // metadata object fields
     val DeletedTo = "deleted_to"
@@ -147,14 +150,14 @@ private[akka] final object CouchbaseSchema {
 
     private lazy val eventsByTagDocIds =
       s"""
-         SELECT meta(a).id, [t, m.ordering][1] as ordering
+         SELECT meta(a).id, [t.tag, m.ordering][1] as ordering
          FROM ${bucketName} a USE INDEX (tags)
          UNNEST messages m
          UNNEST m.tags t
          WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
-         AND [t, m.ordering] >= [$$tag, SUCCESSOR($$fromOffset)]
-         AND [t, m.ordering] <= [$$tag, $$toOffset]
-         ORDER BY [t, m.ordering]
+         AND [t.tag, m.ordering] >= [$$tag, SUCCESSOR($$fromOffset)]
+         AND [t.tag, m.ordering] <= [$$tag, $$toOffset]
+         ORDER BY [t.tag, m.ordering]
          LIMIT $$limit
        """
 
@@ -237,7 +240,7 @@ private[akka] final object CouchbaseSchema {
          SELECT [a.persistence_id, t.tag, t.seq_nr][2] as seq_nr
          FROM ${bucketName} AS a USE INDEX (`tag-seq-nrs`)
          UNNEST a.messages AS m
-         UNNEST m.tag_seq_nrs AS t
+         UNNEST m.tags AS t
          WHERE a.type = "${CouchbaseSchema.JournalEntryType}"
          AND [a.persistence_id, t.tag, t.seq_nr] >= [$$pid, $$tag, SUCCESSOR(0)]
          AND [a.persistence_id, t.tag, t.seq_nr] <= [$$pid, $$tag, ${Long.MaxValue}]
@@ -313,12 +316,12 @@ private[akka] final object CouchbaseSchema {
           .put(Fields.SequenceNr, tagged.sequenceNr)
           .put(Fields.Ordering, TimeBasedUUIDSerialization.toSortableString(tagged.ordering))
           // for the index an array with the tags straight up
-          .put(Fields.Tags, JsonArray.from(tagged.tagsWithSeqNrs.map { case (tag, _) => tag }.asJava))
+          .put(Fields.Tags, JsonArray.from(tagged.tags.map { case (tag, _) => tag }.asJava))
           // for the gap detection, tag and sequence number per tag
           .put(
-            Fields.TagSeqNrs,
+            Fields.Tags,
             JsonArray.from(
-              tagged.tagsWithSeqNrs.map {
+              tagged.tags.map {
                 case (tag, tagSeqNr) =>
                   JsonObject
                     .create()
@@ -327,7 +330,7 @@ private[akka] final object CouchbaseSchema {
               }.asJava
             )
           )
-      case untagged => json
+      case _ => json
     }
   }
 
@@ -371,9 +374,8 @@ private[akka] final object CouchbaseSchema {
   )(implicit ec: ExecutionContext, system: ActorSystem): Future[TaggedPersistentRepr] = {
     val writerUuid = value.getString(Fields.WriterUuid)
     val sequenceNr = value.getLong(Fields.SequenceNr)
-    val tags: Set[String] = value.getArray(Fields.Tags).asScala.map(_.toString).toSet
     val tagSequenceNumbers = value
-      .getArray(Fields.TagSeqNrs)
+      .getArray(Fields.Tags)
       .asScala
       .map {
         case obj: JsonObject => obj.getString(Fields.Tag) -> (obj.getLong(Fields.TagSeqNr): Long)
@@ -385,7 +387,6 @@ private[akka] final object CouchbaseSchema {
                        sequenceNr = sequenceNr,
                        persistenceId = persistenceId,
                        writerUuid = writerUuid),
-        tags,
         tagSequenceNumbers,
         TimeBasedUUIDSerialization.fromSortableString(value.getString(Fields.Ordering))
       )

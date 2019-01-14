@@ -39,11 +39,11 @@ If you will be using the query side with event-for-tags the following two indexe
 
 ```
 CREATE INDEX `tags` ON 
-`akka`((ALL (ARRAY (ALL (ARRAY [`t`, (`m`.`ordering`)] FOR `t` IN (`m`.`tags`) END)) FOR `m` IN `messages` END))) 
+`akka`((ALL (ARRAY (ALL (ARRAY [`t`.`tag`, `m`.`ordering`] FOR `t` IN (`m`.`tags`) END)) FOR `m` IN `messages` END))) 
 WHERE (`type` = "journal_message")
 
 CREATE INDEX `tag-seq-nrs` ON 
-`akka`((ALL (ARRAY (ALL (ARRAY [`persistence_id`, `t`.`tag`, `t`.`seq_nr`] FOR `t` IN (`m`.`tag_seq_nrs`) END)) FOR `m` IN `messages` END))) 
+`akka`((ALL (ARRAY (ALL (ARRAY [`persistence_id`, `t`.`tag`, `t`.`seq_nr`] FOR `t` IN `m`.`tags` END)) FOR `m` IN `messages` END))) 
 WHERE (`type` = "journal_message")
 ```
 
