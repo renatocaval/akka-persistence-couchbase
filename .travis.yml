@@ -28,9 +28,6 @@ jobs:
     - env: CMD="+Test/compile"
 
     - stage: test
-      env:
-        - PRE_CMD="docker-compose -f docker/couchbase-1-node/docker-compose.yml up -d couchbase"
-        - CMD=couchbaseClient/test
     - env:
         - PRE_CMD="docker-compose -f docker/couchbase-1-node/docker-compose.yml up -d couchbase"
         - CMD=core/test

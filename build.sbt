@@ -82,16 +82,7 @@ lazy val root = (project in file("."))
     name := "akka-persistence-couchbase-root",
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
   )
-  .aggregate((Seq(couchbaseClient, core, docs) ++ lagomModules).map(Project.projectToRef): _*)
-
-// TODO this should eventually be an alpakka module
-lazy val couchbaseClient = (project in file("couchbase-client"))
-  .settings(common)
-  .settings(AutomaticModuleName.settings("akka.stream.alpakka.couchbase"))
-  .settings(
-    name := "akka-persistence-couchbase-client",
-    libraryDependencies := Dependencies.couchbaseClient
-  )
+  .aggregate((Seq(core, docs) ++ lagomModules).map(Project.projectToRef): _*)
 
 lazy val core = (project in file("core"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -101,7 +92,6 @@ lazy val core = (project in file("core"))
     name := "akka-persistence-couchbase",
     libraryDependencies := Dependencies.core
   )
-  .dependsOn(couchbaseClient)
 
 lazy val lagomModules = Seq[Project](
   `lagom-persistence-couchbase-core`,
@@ -134,7 +124,7 @@ lazy val `copy-of-lagom-persistence-test` =
     )
 
 lazy val `lagom-persistence-couchbase-core` = (project in file("lagom-persistence-couchbase/core"))
-  .dependsOn(core % "compile;test->test", couchbaseClient)
+  .dependsOn(core % "compile;test->test")
   .settings(common)
   .settings(AutomaticModuleName.settings("lagom.persistence.couchbase.core"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -188,6 +178,7 @@ lazy val docs = project
     paradoxProperties ++= Map(
       "project.url" -> "https://doc.akka.io/docs/akka-persistence-couchbase/current/",
       "akka.version" -> Dependencies.AkkaVersion,
+      "alpakkaCouchbase.version" -> Dependencies.AlpakkaCouchbaseVersion,
       "extref.akka-docs.base_url" -> s"https://doc.akka.io/docs/akka/${Dependencies.AkkaVersion}/%s",
       "extref.java-docs.base_url" -> "https://docs.oracle.com/en/java/javase/11/%s",
       "scaladoc.scala.base_url" -> s"https://www.scala-lang.org/api/current/",

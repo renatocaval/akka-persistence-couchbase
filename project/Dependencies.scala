@@ -7,10 +7,9 @@ import sbt._
 object Dependencies {
 
   val AkkaVersion = "2.5.19"
+  val AlpakkaCouchbaseVersion = "1.0-M2"
   val LagomVersion = "1.5.0-M3"
   object Compile {
-    val couchbaseClient = "com.couchbase.client" % "java-client" % "2.7.2" // Apache V2
-
     // used to easily convert rxjava into reactive streams and then into akka streams
     val rxJavaReactiveStreams = "io.reactivex" % "rxjava-reactive-streams" % "1.2.1" // Apache V2
 
@@ -18,6 +17,8 @@ object Dependencies {
     val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
     val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % AkkaVersion
     val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion
+
+    val alpakkaCouchbase = "com.lightbend.akka" %% "akka-stream-alpakka-couchbase" % AlpakkaCouchbaseVersion
 
     val lagomScalaDslApi = "com.lightbend.lagom" %% "lagom-scaladsl-api" % LagomVersion
     val lagomPersistenceCore = "com.lightbend.lagom" %% "lagom-persistence-core" % LagomVersion
@@ -51,23 +52,12 @@ object Dependencies {
     akkaPersistence,
     akkaPersistenceQuery,
     akkaPersistenceTck,
+    alpakkaCouchbase,
     akkaStreamTestkit,
     akkaTestkit,
     logback,
     slf4jApi,
     scalaTest
-  )
-
-  val couchbaseClient = Seq(
-    akkaActor,
-    akkaStream,
-    akkaStreamTestkit,
-    Compile.couchbaseClient,
-    rxJavaReactiveStreams,
-    scalaTest,
-    junit,
-    junitInterface,
-    logback
   )
 
   val `copy-of-lagom-persistence-test` = Seq(
@@ -80,6 +70,7 @@ object Dependencies {
 
   val `lagom-persistence-couchbase-core` = Seq(
     lagomPersistenceCore,
+    alpakkaCouchbase,
     slf4jApi,
     scalaTest
   )

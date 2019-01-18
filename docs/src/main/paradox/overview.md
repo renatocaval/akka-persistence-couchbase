@@ -1,6 +1,6 @@
 # Overview
 
-The Akka Persistence Couchbase plugin allows for using [Couchbase](https://www.couchbase.com) 5.1 and newer as a backend for [Akka Persistence](https://doc.akka.io/docs/akka/current/persistence.html) and [Akka Persistence Query](https://doc.akka.io/docs/akka/current/persistence-query.html).
+The Akka Persistence Couchbase plugin allows for using [Couchbase](https://www.couchbase.com) 5.1 and newer as a backend for [Akka Persistence](https://doc.akka.io/docs/akka/current/persistence.html) and [Akka Persistence Query](https://doc.akka.io/docs/akka/current/persistence-query.html). It uses [Alpakka Couchbase](https://doc.akka.io/docs/alpakka/current/couchbase.html) @var[alpakkaCouchbase.version] to connect to Couchbase.
 
 ## Project Info
 
