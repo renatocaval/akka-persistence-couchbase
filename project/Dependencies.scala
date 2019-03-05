@@ -6,8 +6,8 @@ import sbt._
 
 object Dependencies {
 
-  val AkkaVersion = "2.5.19"
-  val AlpakkaCouchbaseVersion = "1.0-M2"
+  val AkkaVersion = "2.5.21"
+  val AlpakkaCouchbaseVersion = "1.0-M3"
   val LagomVersion = "1.5.0-M3"
   object Compile {
     // used to easily convert rxjava into reactive streams and then into akka streams
