@@ -47,7 +47,7 @@ class TestActor(override val persistenceId: String, override val journalPluginId
       }
     case cmd: Tagged =>
       persist(cmd) { evt =>
-        val msg = evt.payload + "-done"
+        val msg = s"${evt.payload}-done"
         sender() ! msg
       }
 

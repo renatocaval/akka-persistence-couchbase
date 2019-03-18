@@ -103,7 +103,7 @@ import akka.annotation.InternalApi
    */
   def toSortableString(id: UUID): String = {
     require(id.version() == 1)
-    val builder = StringBuilder.newBuilder
+    val builder = new StringBuilder()
     val instant = UUIDTimestamp(id.timestamp()).toInstant
     builder.append(SortableTimeFormatter.format(instant))
     builder.append('_')
