@@ -1,20 +1,26 @@
 import com.typesafe.sbt.MultiJvmPlugin.MultiJvmKeys
 import com.typesafe.sbt.SbtMultiJvm
 
+inThisBuild(
+  Seq(
+    organization := "com.lightbend.akka",
+    organizationName := "Lightbend Inc.",
+    homepage := Some(url("https://doc.akka.io/docs/akka-persistence-couchbase/current/")),
+    scmInfo := Some(
+      ScmInfo(url("https://github.com/akka/akka-persistence-couchbase"),
+              "https://github.com/akka/akka-persistence-couchbase.git")
+    ),
+    startYear := Some(2018),
+    developers += Developer("contributors",
+                            "Contributors",
+                            "https://gitter.im/akka/dev",
+                            url("https://github.com/akka/akka-persistence-couchbase/graphs/contributors")),
+    licenses := Seq(("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
+    description := "A replicated Akka Persistence journal backed by Couchbase",
+  )
+)
+
 def common: Seq[Setting[_]] = Seq(
-  organization := "com.lightbend.akka",
-  organizationName := "Lightbend Inc.",
-  homepage := Some(url("https://doc.akka.io/docs/akka-persistence-couchbase/current/")),
-  scmInfo := Some(
-    ScmInfo(url("https://github.com/akka/akka-persistence-couchbase"),
-            "https://github.com/akka/akka-persistence-couchbase.git")
-  ),
-  startYear := Some(2018),
-  developers += Developer("contributors",
-                          "Contributors",
-                          "https://gitter.im/akka/dev",
-                          url("https://github.com/akka/akka-persistence-couchbase/graphs/contributors")),
-  licenses := Seq(("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
   crossScalaVersions := Seq(Dependencies.Scala213, Dependencies.Scala212, Dependencies.Scala211),
   scalaVersion := Dependencies.Scala212,
   crossVersion := CrossVersion.binary,
@@ -182,7 +188,6 @@ lazy val docs = project
     crossScalaVersions := Seq(Dependencies.Scala212),
     paradoxGroups := Map("Language" -> Seq("Java", "Scala")),
     paradoxProperties ++= Map(
-      "project.url" -> "https://doc.akka.io/docs/akka-persistence-couchbase/current/",
       "akka.version" -> Dependencies.AkkaVersion,
       "alpakkaCouchbase.version" -> Dependencies.AlpakkaCouchbaseVersion,
       "extref.akka-docs.base_url" -> s"https://doc.akka.io/docs/akka/${Dependencies.AkkaVersion}/%s",

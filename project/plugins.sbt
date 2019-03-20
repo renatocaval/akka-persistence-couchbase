@@ -11,10 +11,9 @@ addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 
 // docs
-addSbtPlugin("com.lightbend.paradox" % "sbt-paradox" % "0.5.1")
 addSbtPlugin("com.lightbend.paradox" % "sbt-paradox-dependencies" % "0.1")
-addSbtPlugin("com.lightbend.paradox" % "sbt-paradox-project-info" % "1.1.1")
-addSbtPlugin("com.lightbend.akka" % "sbt-paradox-akka" % "0.14")
+addSbtPlugin("com.lightbend.paradox" % "sbt-paradox-project-info" % "1.1.2")
+addSbtPlugin("com.lightbend.akka" % "sbt-paradox-akka" % "0.18")
 // patched version of sbt-dependency-graph
 // depend directly on the patched version see https://github.com/akka/alpakka/issues/1388
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2+10-148ba0ff")
