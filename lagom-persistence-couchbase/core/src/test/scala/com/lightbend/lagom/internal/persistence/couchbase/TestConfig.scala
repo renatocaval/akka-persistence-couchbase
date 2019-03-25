@@ -9,16 +9,18 @@ import scala.collection.JavaConverters._
 
 object TestConfig {
 
-  lazy val ClusterConfigMap: Map[String, AnyRef] = Map(
-    "akka.actor.provider" -> "akka.cluster.ClusterActorRefProvider",
-    "akka.remote.netty.tcp.hostname" -> "127.0.0.1",
-    "akka.remote.netty.tcp.port" -> "0",
-    "akka.loglevel" -> "INFO",
-    "akka.cluster.sharding.distributed-data.durable.keys" -> List().asJava,
-    "lagom.cluster.join-self" -> "on"
-  )
+  val ClusterConfig = """
+    akka.actor.provider: cluster
+    akka.remote.netty.tcp.hostname: 127.0.0.1
+    akka.remote.netty.tcp.port: 0
+    akka.loglevel: INFO
+    akka.cluster.sharding.distributed-data.durable.keys: []
+    lagom.cluster.join-self: on
+    lagom.cluster.bootstrap.enabled: off
+    lagom.akka.management.enabled: off
+  """
 
-  def clusterConfig(): Config = ConfigFactory.parseMap(ClusterConfigMap.asJava)
+  def clusterConfig(): Config = ConfigFactory.parseString(ClusterConfig)
 
   val PersistenceConfigMap: Map[String, AnyRef] = Map(
     "akka.persistence.journal.plugin" -> "couchbase-journal.write",
@@ -36,7 +38,9 @@ object TestConfig {
     "lagom.persistence.read-side.couchbase.bucket" -> "akka",
     "lagom.persistence.read-side.couchbase.connection.nodes" -> List("").asJava,
     "lagom.persistence.read-side.couchbase.connection.username" -> "admin",
-    "lagom.persistence.read-side.couchbase.connection.password" -> "admin1"
+    "lagom.persistence.read-side.couchbase.connection.password" -> "admin1",
+    "lagom.cluster.bootstrap.enabled" -> "off",
+    "lagom.akka.management.enabled" -> "off"
   )
 
   def persistenceConfig(): Config =

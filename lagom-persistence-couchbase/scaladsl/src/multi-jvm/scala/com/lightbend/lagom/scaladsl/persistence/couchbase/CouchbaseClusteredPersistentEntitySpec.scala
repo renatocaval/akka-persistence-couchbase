@@ -6,14 +6,17 @@ package com.lightbend.lagom.scaladsl.persistence.couchbase
 
 import java.io.File
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.persistence.couchbase.CouchbaseClusterConnection
 import akka.stream.{ActorMaterializer, Materializer}
 import com.lightbend.lagom.internal.persistence.couchbase.TestConfig
 import com.lightbend.lagom.internal.persistence.testkit.AwaitPersistenceInit.awaitPersistenceInit
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
-import com.lightbend.lagom.scaladsl.persistence.multinode.{AbstractClusteredPersistentEntityConfig, AbstractClusteredPersistentEntitySpec}
+import com.lightbend.lagom.scaladsl.persistence.multinode.{
+  AbstractClusteredPersistentEntityConfig,
+  AbstractClusteredPersistentEntitySpec
+}
 import com.lightbend.lagom.scaladsl.persistence.{ReadSideProcessor, TestEntity}
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.typesafe.config.Config
@@ -57,6 +60,7 @@ class CouchbaseClusteredPersistentEntitySpec
       override def serviceLocator: ServiceLocator = NoServiceLocator
       override def environment: Environment = Environment(new File("."), getClass.getClassLoader, Mode.Test)
       override def jsonSerializerRegistry: JsonSerializerRegistry = ???
+      override def coordinatedShutdown: CoordinatedShutdown = CoordinatedShutdown(system)
     }
 
   def testEntityReadSide = new TestEntityReadSide(components.actorSystem, components.couchbase)

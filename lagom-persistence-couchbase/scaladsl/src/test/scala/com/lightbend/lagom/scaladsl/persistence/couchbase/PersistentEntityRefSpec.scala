@@ -7,7 +7,7 @@ package com.lightbend.lagom.scaladsl.persistence.couchbase
 import java.io.File
 
 import akka.actor.setup.ActorSystemSetup
-import akka.actor.{ActorSystem, BootstrapSetup}
+import akka.actor.{ActorSystem, BootstrapSetup, CoordinatedShutdown}
 import akka.cluster.Cluster
 import akka.pattern.AskTimeoutException
 import akka.persistence.couchbase.CouchbaseBucketSetup
@@ -87,6 +87,7 @@ class PersistentEntityRefSpec
     override def materializer: Materializer = ActorMaterializer()(system)
     override def serviceLocator: ServiceLocator = NoServiceLocator
     override def jsonSerializerRegistry: JsonSerializerRegistry = TestEntitySerializerRegistry
+    override def coordinatedShutdown: CoordinatedShutdown = CoordinatedShutdown(system)
   }
 
   private def registry: PersistentEntityRegistry = {
