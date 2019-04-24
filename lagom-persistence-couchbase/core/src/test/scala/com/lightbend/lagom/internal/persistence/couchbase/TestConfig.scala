@@ -18,6 +18,7 @@ object TestConfig {
     lagom.cluster.join-self: on
     lagom.cluster.bootstrap.enabled: off
     lagom.akka.management.enabled: off
+    lagom.cluster.exit-jvm-when-system-terminated: off
   """
 
   def clusterConfig(): Config = ConfigFactory.parseString(ClusterConfig)
