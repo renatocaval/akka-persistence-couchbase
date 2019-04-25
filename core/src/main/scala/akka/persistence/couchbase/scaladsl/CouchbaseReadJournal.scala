@@ -111,7 +111,7 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
     } yield {
 
       val indexNames = indexes.map(_.name()).toSet
-      Set("tags-ordering-cover-meta").foreach(
+      Set("tags", "tag-seq-nrs").foreach(
         requiredIndex =>
           if (!indexNames(requiredIndex))
             log.warning(
@@ -146,9 +146,11 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
    * Corresponding query that is completed when it reaches the end of the currently
    * stored events is provided by `currentEventsByPersistenceId`.
    */
-  override def eventsByPersistenceId(persistenceId: String,
-                                     fromSequenceNr: Long,
-                                     toSequenceNr: Long): Source[EventEnvelope, NotUsed] =
+  override def eventsByPersistenceId(
+      persistenceId: String,
+      fromSequenceNr: Long,
+      toSequenceNr: Long
+  ): Source[EventEnvelope, NotUsed] =
     internalEventsByPersistenceId(live = true, persistenceId, fromSequenceNr, toSequenceNr)
 
   /**
@@ -156,9 +158,11 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
    * is completed immediately when it reaches the end of the "result set". Events that are
    * stored after the query is completed are not included in the event stream.
    */
-  override def currentEventsByPersistenceId(persistenceId: String,
-                                            fromSequenceNr: Long,
-                                            toSequenceNr: Long): Source[EventEnvelope, NotUsed] =
+  override def currentEventsByPersistenceId(
+      persistenceId: String,
+      fromSequenceNr: Long,
+      toSequenceNr: Long
+  ): Source[EventEnvelope, NotUsed] =
     Source
       .lazilyAsync { () =>
         (if (toSequenceNr == Long.MaxValue) {
@@ -176,10 +180,12 @@ final class CouchbaseReadJournal(eas: ExtendedActorSystem, config: Config, confi
       .flatMapConcat(identity)
       .mapMaterializedValue(_ => NotUsed)
 
-  private def internalEventsByPersistenceId(live: Boolean,
-                                            persistenceId: String,
-                                            fromSequenceNr: Long,
-                                            toSequenceNr: Long): Source[EventEnvelope, NotUsed] =
+  private def internalEventsByPersistenceId(
+      live: Boolean,
+      persistenceId: String,
+      fromSequenceNr: Long,
+      toSequenceNr: Long
+  ): Source[EventEnvelope, NotUsed] =
     sourceWithCouchbaseSession { session =>
       val deletedTo: Future[Long] =
         firstNonDeletedEventFor(persistenceId, session, 10.seconds) // FIXME timeout from config
