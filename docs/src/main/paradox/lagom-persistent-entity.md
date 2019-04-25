@@ -1,7 +1,7 @@
 # Lagom: Persistent Entities
 
-This page describes how to configure Couchbase for use with Lagom's 
-[Persistent Entity](https://www.lagomframework.com/documentation/1.4.x/java/PersistentEntity.html) API.
+This page describes how to configure Couchbase for use with the Lagom 1.5 
+[Persistent Entity](https://www.lagomframework.com/documentation/1.5.x/java/PersistentEntity.html) API.
 
 ## Project dependencies
 

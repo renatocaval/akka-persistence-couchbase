@@ -14,23 +14,7 @@ For questions please use the [discuss.akka.io](https://discuss.akka.io). Tag any
 
 ## Project status
 
-The plugins are available in an early access mode, we will publish milestones as we work towards a 1.0 release.
-
-Current state:
-
-*Write Journal* implemented with minor details in progress, should work but not production ready
-*Snapshot Store* should work but not production ready
-*Read Journal* implemented with minor details in progress, should work but not production ready
-*Lagom support* should work but not production ready
-
-
-### Caveats
-
- * In preview status - not production ready
- * Performance and failure scenario testing has not yet been done
- * Smaller schema changes will likely happen and there will not be any migration tools provided as long as
-   project releases are milestones
-
+The plugins are released in a stable 1.0 version.
 
 ## License
 

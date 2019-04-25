@@ -1,9 +1,9 @@
 # Lagom: Read-Side support
 
-This page is specifically about Lagom's support for Couchbase read-sides.  
+This page is specifically about Lagom 1.5 support for Couchbase read-sides.  
 Before reading this, you should familiarize yourself with Lagom's general 
-@scala[[read-side support](https://www.lagomframework.com/documentation/1.4.x/scala/ReadSide.html)]
-@java[[read-side support](https://www.lagomframework.com/documentation/1.4.x/java/ReadSide.html)].
+@scala[[read-side support](https://www.lagomframework.com/documentation/1.5.x/scala/ReadSide.html)]
+@java[[read-side support](https://www.lagomframework.com/documentation/1.5.x/java/ReadSide.html)].
 
 ## Query the Read-Side Database
 
