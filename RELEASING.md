@@ -16,3 +16,4 @@ You will need permission in sonatype to push to `com.lightbend.akka` groupd ID.
  1. Close the milestone for this release and start a new one.
  1. Build docs `docs/paradox` and copy to a directory with the version of the plugin on akka.io, link `current` to that directory
     (follow https://github.com/akka/alpakka-kafka/blob/master/docs/release-train-issue-template.md#publish-docs-to-gustav)
+ 1. Ask someone in the Akka team to update the [Lightbend Platform supported modules list](https://developer.lightbend.com/docs/lightbend-platform/2.0/supported-modules/) (requires Lightbend private GitHub permission). Only for stable releases, not milestones/RCs.
